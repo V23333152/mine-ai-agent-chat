@@ -1,0 +1,32 @@
+{
+  "id": "weather",
+  "name": "天气查询",
+  "version": "1.0.0",
+  "description": "提供天气预报、实时天气、生活指数等功能，支持查询全国各城市天气",
+  "author": "system",
+  "type": "native",
+  "tags": ["天气", "预报", "生活指数"],
+  "config": [
+    {
+      "name": "apiKey",
+      "type": "string",
+      "required": false,
+      "description": "天气 API Key（部分 API 需要）",
+      "env": "WEATHER_API_KEY"
+    }
+  ],
+  "tools": [
+    {
+      "id": "current_weather",
+      "name": "实时天气",
+      "description": "查询指定城市当前的天气状况",
+      "examples": ["北京今天天气怎么样", "上海现在多少度"]
+    },
+    {
+      "id": "weather_forecast",
+      "name": "天气预报",
+      "description": "查询指定城市未来几天的天气预报",
+      "examples": ["北京未来三天天气", "杭州这周会下雨吗"]
+    }
+  ]
+}

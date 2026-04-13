@@ -1,0 +1,51 @@
+{
+  "id": "amap-lbs",
+  "name": "高德地图",
+  "version": "1.0.0",
+  "description": "提供地图搜索、路线规划、地理编码等功能，支持查找地点、规划出行路线、搜索周边服务等",
+  "author": "system",
+  "type": "native",
+  "tags": ["地图", "导航", "位置服务"],
+  "config": [
+    {
+      "name": "apiKey",
+      "type": "string",
+      "required": true,
+      "description": "高德地图 Web服务 Key",
+      "env": "AMAP_WEBSERVICE_KEY"
+    },
+    {
+      "name": "defaultCity",
+      "type": "string",
+      "required": false,
+      "description": "默认搜索城市",
+      "default": "北京"
+    }
+  ],
+  "tools": [
+    {
+      "id": "search_poi",
+      "name": "搜索地点",
+      "description": "搜索兴趣点(POI)，如餐厅、酒店、景点、商场等",
+      "examples": ["搜索附近的火锅店", "查找北京故宫博物院地址"]
+    },
+    {
+      "id": "nearby_search",
+      "name": "附近搜索",
+      "description": "搜索指定位置周边的POI",
+      "examples": ["搜索我附近的加油站", "查找天安门附近的餐厅"]
+    },
+    {
+      "id": "route_planning",
+      "name": "路线规划",
+      "description": "规划驾车、步行、公交、骑行路线",
+      "examples": ["从北京南站到天安门怎么走", "规划去上海外滩的路线"]
+    },
+    {
+      "id": "geocode",
+      "name": "地理编码",
+      "description": "将地址转换为经纬度坐标",
+      "examples": ["获取北京市朝阳区的经纬度"]
+    }
+  ]
+}

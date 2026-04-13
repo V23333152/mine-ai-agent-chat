@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "amap-lbs": {
+      "id": "amap-lbs",
+      "path": "./amap-lbs",
+      "enabled": true,
+      "config": {}
+    },
+    "weather": {
+      "id": "weather",
+      "path": "./weather",
+      "enabled": true,
+      "config": {}
+    },
+    "ai-scheduler": {
+      "id": "ai-scheduler",
+      "path": "./scheduler",
+      "enabled": true,
+      "config": {}
+    }
+  }
+}

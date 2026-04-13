@@ -1,0 +1,15 @@
+{
+  "task_id": "ab5708d5-eba0-4b95-8b3b-75314cbdae31",
+  "task_name": "morning-briefing",
+  "total_runs": 2,
+  "successful_runs": 1,
+  "failed_runs": 1,
+  "last_run": 1775642322.4846869,
+  "last_success": 1775642141.985932,
+  "last_failure": 1775642322.4846869,
+  "status": "error",
+  "next_run": null,
+  "consecutive_failures": 1,
+  "last_error": "OpenAI API key not found",
+  "custom_data": {}
+}

@@ -1,0 +1,15 @@
+{
+  "task_id": "1e2438e8-f96b-493f-b6f7-feeb6b78c0ad",
+  "task_name": "下班提醒",
+  "total_runs": 6,
+  "successful_runs": 3,
+  "failed_runs": 3,
+  "last_run": 1775641980.0149755,
+  "last_success": 1775641800.0190613,
+  "last_failure": 1775641980.0149755,
+  "status": "error",
+  "next_run": null,
+  "consecutive_failures": 1,
+  "last_error": "OpenAI API key not found",
+  "custom_data": {}
+}

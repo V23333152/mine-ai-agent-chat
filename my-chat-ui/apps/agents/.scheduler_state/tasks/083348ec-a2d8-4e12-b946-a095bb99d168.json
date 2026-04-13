@@ -1,0 +1,15 @@
+{
+  "task_id": "083348ec-a2d8-4e12-b946-a095bb99d168",
+  "task_name": "test-echo",
+  "total_runs": 3,
+  "successful_runs": 2,
+  "failed_runs": 1,
+  "last_run": 1775642400.0134692,
+  "last_success": 1775642400.0134692,
+  "last_failure": 1775642340.0132418,
+  "status": "idle",
+  "next_run": null,
+  "consecutive_failures": 0,
+  "last_error": "OpenAI API key not found",
+  "custom_data": {}
+}

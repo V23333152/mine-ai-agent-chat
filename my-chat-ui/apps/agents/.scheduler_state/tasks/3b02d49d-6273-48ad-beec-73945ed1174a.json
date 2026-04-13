@@ -1,0 +1,15 @@
+{
+  "task_id": "3b02d49d-6273-48ad-beec-73945ed1174a",
+  "task_name": "test-echo",
+  "total_runs": 1,
+  "successful_runs": 1,
+  "failed_runs": 0,
+  "last_run": 1775702160.0148768,
+  "last_success": 1775702160.0148768,
+  "last_failure": null,
+  "status": "idle",
+  "next_run": null,
+  "consecutive_failures": 0,
+  "last_error": null,
+  "custom_data": {}
+}

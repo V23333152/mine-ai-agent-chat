@@ -1,0 +1,15 @@
+{
+  "task_id": "3d4540b1-fc49-4944-a025-bc4290b72d13",
+  "task_name": "每日新闻",
+  "total_runs": 12,
+  "successful_runs": 12,
+  "failed_runs": 0,
+  "last_run": 1775799065.6529572,
+  "last_success": 1775799065.6529572,
+  "last_failure": null,
+  "status": "idle",
+  "next_run": null,
+  "consecutive_failures": 0,
+  "last_error": null,
+  "custom_data": {}
+}

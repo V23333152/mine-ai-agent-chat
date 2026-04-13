@@ -1,0 +1,27 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - button [ref=e7]:
+        - img
+      - generic [ref=e8]:
+        - button "MCP Servers" [ref=e9]:
+          - img
+          - generic [ref=e10]: MCP Servers
+        - button "Vector Database" [ref=e11]:
+          - img
+          - generic [ref=e12]: Vector Database
+        - link "GitHub" [ref=e13] [cursor=pointer]:
+          - /url: https://github.com/langchain-ai/agent-chat-ui
+          - img "GitHub" [ref=e14]
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - img [ref=e21]
+        - heading "Agent Chat" [level=1] [ref=e23]
+      - generic [ref=e25]:
+        - textbox "Type your message..." [ref=e26]
+        - generic [ref=e27]:
+          - button [ref=e28]:
+            - img
+          - button [disabled]:
+            - img
+  - region "Notifications alt+T"

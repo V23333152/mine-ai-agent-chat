@@ -1,0 +1,63 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - button [ref=e32]:
+          - img
+        - button "Agent Chat" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+          - generic [ref=e36]: Agent Chat
+      - generic [ref=e37]:
+        - button "MCP Servers" [ref=e38]:
+          - img
+          - generic [ref=e39]: MCP Servers
+        - button "Vector Database" [ref=e40]:
+          - img
+          - generic [ref=e41]: Vector Database
+        - link "GitHub" [ref=e43] [cursor=pointer]:
+          - /url: https://github.com/langchain-ai/agent-chat-ui
+          - img "GitHub" [ref=e44]
+        - button "New thread" [ref=e46]:
+          - img
+          - generic [ref=e47]: New thread
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e50]:
+          - paragraph [ref=e52]: 画一只可爱的卡通猫咪，坐在月球上看星星，用柔和的色调
+          - generic [ref=e54]:
+            - button "Copy content" [disabled]:
+              - generic:
+                - img
+              - generic: Copy content
+            - button "Edit" [disabled]:
+              - img
+              - generic: Edit
+        - generic [ref=e56]:
+          - generic [ref=e58]:
+            - heading "generate_imagegenerate_image:0" [level=3] [ref=e60]:
+              - text: generate_image
+              - code [ref=e61]: generate_image:0
+            - table [ref=e62]:
+              - rowgroup [ref=e63]:
+                - row "prompt 一只可爱的卡通猫咪，坐在月球上看星星，用柔和的色调" [ref=e64]:
+                  - cell "prompt" [ref=e65]
+                  - cell "一只可爱的卡通猫咪，坐在月球上看星星，用柔和的色调" [ref=e66]
+                - row "size 1024x1024" [ref=e67]:
+                  - cell "size" [ref=e68]
+                  - cell "1024x1024" [ref=e69]
+          - generic [ref=e71]:
+            - button "Copy content" [disabled]:
+              - generic:
+                - img
+              - generic: Copy content
+            - button "Refresh" [disabled]:
+              - img
+              - generic: Refresh
+      - generic [ref=e25]:
+        - textbox "Type your message..." [active] [ref=e26]
+        - generic [ref=e27]:
+          - button [disabled]:
+            - img
+          - button [ref=e72]:
+            - img
+  - region "Notifications alt+T"

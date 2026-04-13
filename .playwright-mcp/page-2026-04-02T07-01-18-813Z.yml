@@ -1,0 +1,140 @@
+- generic [ref=e2]:
+  - generic [ref=e33]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - button [ref=e66]:
+          - img
+        - button "Agent Chat" [ref=e67] [cursor=pointer]:
+          - img [ref=e68]
+          - generic [ref=e70]: Agent Chat
+      - generic [ref=e71]:
+        - generic "点击打开向量库面板" [ref=e72] [cursor=pointer]:
+          - img [ref=e73]
+          - generic [ref=e77]: 默认知识库
+        - button "MCP Servers" [ref=e78]:
+          - img
+          - generic [ref=e79]: MCP Servers
+        - button "Vector Database" [ref=e80]:
+          - img
+          - generic [ref=e81]: Vector Database
+        - link "GitHub" [ref=e83] [cursor=pointer]:
+          - /url: https://github.com/langchain-ai/agent-chat-ui
+          - img "GitHub" [ref=e84]
+        - button "New thread" [ref=e86]:
+          - img
+          - generic [ref=e87]: New thread
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e90]:
+          - paragraph [ref=e92]: 搜索知识库，告诉我关于测试阶段的内容
+          - generic [ref=e94]:
+            - button "Copy content" [ref=e95]:
+              - generic [ref=e96]:
+                - img
+              - generic [ref=e97]: Copy content
+            - button "Edit" [ref=e98]:
+              - img
+              - generic [ref=e99]: Edit
+        - generic [ref=e101]:
+          - generic [ref=e103]:
+            - heading "search_documentssearch_documents:0" [level=3] [ref=e105]:
+              - text: search_documents
+              - code [ref=e106]: search_documents:0
+            - table [ref=e107]:
+              - rowgroup [ref=e108]:
+                - row "query 测试阶段" [ref=e109]:
+                  - cell "query" [ref=e110]
+                  - cell "测试阶段" [ref=e111]
+                - row "user_id default" [ref=e112]:
+                  - cell "user_id" [ref=e113]
+                  - cell "default" [ref=e114]
+                - row "collection_name default" [ref=e115]:
+                  - cell "collection_name" [ref=e116]
+                  - cell "default" [ref=e117]
+                - row "k 5" [ref=e118]:
+                  - cell "k" [ref=e119]
+                  - cell "5" [ref=e120]
+          - generic [ref=e122]:
+            - button "播放语音" [ref=e123]:
+              - generic [ref=e124]:
+                - img
+              - generic [ref=e125]: 播放语音
+            - button "Copy content" [ref=e126]:
+              - generic [ref=e127]:
+                - img
+              - generic [ref=e128]: Copy content
+            - button "Refresh" [ref=e129]:
+              - img
+              - generic [ref=e130]: Refresh
+        - generic [ref=e132]:
+          - generic [ref=e134]:
+            - 'heading "Tool Result: search_documents" [level=3] [ref=e135]':
+              - text: "Tool Result:"
+              - code [ref=e136]: search_documents
+            - code [ref=e137]: search_documents:0
+          - generic [ref=e138]:
+            - generic [ref=e142]:
+              - paragraph [ref=e143]: "Found 5 relevant documents in \"default\":"
+              - paragraph [ref=e144]: "[1] From 企业级项目实施流程模板.md (collection: default): emplate"
+              - paragraph [ref=e145]: © 2025 版权所有
+              - 'heading "[2] From 企业级项目实施流程模板.md (collection: default):" [level=2] [ref=e146]'
+              - heading "第三部分 项目管理规范" [level=1] [ref=e147]
+              - heading "3.1 组织架构" [level=2] [ref=e148]
+              - paragraph [ref=e149]: 项目采用矩阵式管理架构，设立项目管理委员会、项目经理、技术负责人、质量保证人员等角色，明确各角色的职责和权限，确保项目高效运作。
+              - separator [ref=e150]
+              - paragraph [ref=e151]:
+                - strong [ref=e152]: 角色
+                - strong [ref=e153]: 职责
+                - strong [ref=e154]: 人员要求
+                - text: "--------------- -----------------------..."
+            - button [ref=e155] [cursor=pointer]:
+              - img [ref=e156]
+        - generic [ref=e159]:
+          - generic [ref=e161]:
+            - paragraph [ref=e162]: 在知识库中，关于测试阶段的内容主要来自《企业级项目实施流程模板.md》文档。以下是该阶段的关键信息：
+            - list [ref=e163]:
+              - listitem [ref=e164]:
+                - paragraph [ref=e165]:
+                  - strong [ref=e166]: 阶段目标
+                  - text: ：全面测试系统功能，发现并修复缺陷，确保系统质量达到交付标准。
+              - listitem [ref=e167]:
+                - paragraph [ref=e168]:
+                  - strong [ref=e169]: 主要工作
+                  - text: ：
+                - list [ref=e170]:
+                  - listitem [ref=e171]: 制定测试计划和测试用例。
+                  - listitem [ref=e172]: 进行模块集成测试。
+                  - listitem [ref=e173]: 进行功能、性能、安全等系统测试。
+                  - listitem [ref=e174]: 跟踪和管理缺陷修复。
+              - listitem [ref=e175]:
+                - paragraph [ref=e176]:
+                  - strong [ref=e177]: 交付物
+                  - text: ：
+                - list [ref=e178]:
+                  - listitem [ref=e179]: 《测试计划》：详细描述测试策略、范围、方法、资源和时间表。
+                  - listitem [ref=e180]: 《测试报告》：记录测试活动的结果，包括测试覆盖率、缺陷统计和测试结论。
+                  - listitem [ref=e181]: 《缺陷报告》：详细记录每个缺陷的描述、重现步骤、严重程度和修复状态。
+                  - listitem [ref=e182]: 《用户验收测试报告》：记录用户验收测试的结果，包括用户反馈和验收结论。
+            - paragraph [ref=e183]: 这些信息为测试阶段提供了全面的指导，确保项目能够按照既定的质量标准成功交付。
+          - generic [ref=e185]:
+            - button "播放语音" [ref=e186]:
+              - generic [ref=e187]:
+                - img
+              - generic [ref=e188]: 播放语音
+            - button "Copy content" [ref=e189]:
+              - generic [ref=e190]:
+                - img
+              - generic [ref=e191]: Copy content
+            - button "Refresh" [ref=e192]:
+              - img
+              - generic [ref=e193]: Refresh
+      - generic [ref=e57]:
+        - textbox "使用 \"默认知识库\" 回答您的问题..." [active] [ref=e58]
+        - generic [ref=e59]:
+          - button [ref=e60]:
+            - img
+          - button "语音输入" [ref=e62]:
+            - img
+          - button [disabled]:
+            - img
+  - region "Notifications alt+T"

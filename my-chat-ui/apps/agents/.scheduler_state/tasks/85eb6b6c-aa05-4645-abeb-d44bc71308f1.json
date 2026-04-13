@@ -1,0 +1,15 @@
+{
+  "task_id": "85eb6b6c-aa05-4645-abeb-d44bc71308f1",
+  "task_name": "morning-briefing",
+  "total_runs": 5,
+  "successful_runs": 4,
+  "failed_runs": 1,
+  "last_run": 1775704348.414773,
+  "last_success": 1775704293.0282228,
+  "last_failure": 1775704348.414773,
+  "status": "error",
+  "next_run": null,
+  "consecutive_failures": 1,
+  "last_error": "Error code: 429 - {'error': {'message': 'The engine is currently overloaded, please try again later', 'type': 'engine_overloaded_error'}}",
+  "custom_data": {}
+}

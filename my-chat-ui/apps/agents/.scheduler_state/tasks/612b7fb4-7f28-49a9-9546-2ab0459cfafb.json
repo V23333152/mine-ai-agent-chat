@@ -1,0 +1,15 @@
+{
+  "task_id": "612b7fb4-7f28-49a9-9546-2ab0459cfafb",
+  "task_name": "午休提醒",
+  "total_runs": 4,
+  "successful_runs": 4,
+  "failed_runs": 0,
+  "last_run": 1775709006.320127,
+  "last_success": 1775709006.320127,
+  "last_failure": null,
+  "status": "idle",
+  "next_run": null,
+  "consecutive_failures": 0,
+  "last_error": null,
+  "custom_data": {}
+}

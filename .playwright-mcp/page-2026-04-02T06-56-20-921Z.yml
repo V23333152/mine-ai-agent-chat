@@ -1,0 +1,32 @@
+- generic [ref=e2]:
+  - generic [ref=e33]:
+    - generic [ref=e34]:
+      - button [ref=e36]:
+        - img
+      - generic [ref=e37]:
+        - button "实时语音对话" [ref=e38]:
+          - img
+          - generic [ref=e39]: 实时语音对话
+        - button "MCP Servers" [ref=e40]:
+          - img
+          - generic [ref=e41]: MCP Servers
+        - button "Vector Database" [ref=e42]:
+          - img
+          - generic [ref=e43]: Vector Database
+        - link "GitHub" [ref=e44] [cursor=pointer]:
+          - /url: https://github.com/langchain-ai/agent-chat-ui
+          - img "GitHub" [ref=e45]
+    - generic [ref=e50]:
+      - generic [ref=e51]:
+        - img [ref=e52]
+        - heading "Agent Chat" [level=1] [ref=e54]
+      - generic [ref=e57]:
+        - textbox "使用 \"默认知识库\" 回答您的问题..." [ref=e58]
+        - generic [ref=e59]:
+          - button [ref=e60]:
+            - img
+          - button "语音输入" [ref=e62]:
+            - img
+          - button [disabled]:
+            - img
+  - region "Notifications alt+T"

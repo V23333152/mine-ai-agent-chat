@@ -1,0 +1,15 @@
+{
+  "task_id": "e8f43550-19f7-4bb1-a6c1-d064587d6d25",
+  "task_name": "下班提醒",
+  "total_runs": 2,
+  "successful_runs": 2,
+  "failed_runs": 0,
+  "last_run": 1775642481.1112642,
+  "last_success": 1775642481.1112642,
+  "last_failure": null,
+  "status": "idle",
+  "next_run": null,
+  "consecutive_failures": 0,
+  "last_error": null,
+  "custom_data": {}
+}

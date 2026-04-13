@@ -1,0 +1,57 @@
+{
+  "id": "ai-scheduler",
+  "name": "AI 定时任务调度器",
+  "version": "1.0.0",
+  "description": "通过自然语言创建和管理定时任务，支持 Cron 定时、Heartbeat 智能检查",
+  "author": "AI Scheduler Team",
+  "type": "native",
+  "entry": "./index.ts",
+  "tags": ["schedule", "cron", "automation", "task"],
+  "config": {
+    "apiKey": {
+      "type": "string",
+      "required": false,
+      "description": "Moonshot API Key",
+      "env": "MOONSHOT_API_KEY"
+    },
+    "defaultModel": {
+      "type": "string",
+      "required": false,
+      "description": "默认使用的 AI 模型",
+      "default": "moonshot-v1-8k"
+    },
+    "notifyUIEnabled": {
+      "type": "boolean",
+      "required": false,
+      "description": "是否启用通知界面",
+      "default": true
+    }
+  },
+  "tools": [
+    {
+      "id": "schedule_cron_task",
+      "name": "创建定时任务",
+      "description": "创建一个在固定时间自动执行的任务"
+    },
+    {
+      "id": "schedule_heartbeat_task",
+      "name": "创建智能检查任务",
+      "description": "创建一个定期检查并按条件触发的任务"
+    },
+    {
+      "id": "list_scheduled_tasks",
+      "name": "列出所有任务",
+      "description": "查看当前所有的定时任务"
+    },
+    {
+      "id": "delete_scheduled_task",
+      "name": "删除任务",
+      "description": "删除指定的定时任务"
+    },
+    {
+      "id": "trigger_task_now",
+      "name": "立即触发任务",
+      "description": "手动立即执行一个任务"
+    }
+  ]
+}

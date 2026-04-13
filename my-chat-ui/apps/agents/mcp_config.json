@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "ai_scheduler": {
+      "command": "python",
+      "args": [
+        "mcp_scheduler_wrapper.py"
+      ],
+      "env": {
+        "SCHEDULER_CONFIG": "./scheduler.yaml",
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "PYTHONIOENCODING": "utf-8"
+      },
+      "cwd": "./",
+      "description": "AI 定时任务调度器 - 支持Cron/Heartbeat/Event三种模式"
+    }
+  }
+}

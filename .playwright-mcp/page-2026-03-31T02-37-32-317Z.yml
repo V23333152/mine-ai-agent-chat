@@ -1,0 +1,83 @@
+- generic [ref=e2]:
+  - generic [ref=e4]:
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - button [ref=e32]:
+          - img
+        - button "Agent Chat" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+          - generic [ref=e36]: Agent Chat
+      - generic [ref=e37]:
+        - button "MCP Servers" [ref=e38]:
+          - img
+          - generic [ref=e39]: MCP Servers
+        - button "Vector Database" [ref=e40]:
+          - img
+          - generic [ref=e41]: Vector Database
+        - link "GitHub" [ref=e43] [cursor=pointer]:
+          - /url: https://github.com/langchain-ai/agent-chat-ui
+          - img "GitHub" [ref=e44]
+        - button "New thread" [ref=e46]:
+          - img
+          - generic [ref=e47]: New thread
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e50]:
+          - paragraph [ref=e52]: 画一只可爱的卡通猫咪，坐在月球上看星星，用柔和的色调
+          - generic [ref=e54]:
+            - button "Copy content" [ref=e73]:
+              - generic [ref=e74]:
+                - img
+              - generic [ref=e75]: Copy content
+            - button "Edit" [ref=e76]:
+              - img
+              - generic [ref=e77]: Edit
+        - generic [ref=e56]:
+          - generic [ref=e58]:
+            - heading "generate_imagegenerate_image:0" [level=3] [ref=e60]:
+              - text: generate_image
+              - code [ref=e61]: generate_image:0
+            - table [ref=e62]:
+              - rowgroup [ref=e63]:
+                - row "prompt 一只可爱的卡通猫咪，坐在月球上看星星，用柔和的色调" [ref=e64]:
+                  - cell "prompt" [ref=e65]
+                  - cell "一只可爱的卡通猫咪，坐在月球上看星星，用柔和的色调" [ref=e66]
+                - row "size 1024x1024" [ref=e67]:
+                  - cell "size" [ref=e68]
+                  - cell "1024x1024" [ref=e69]
+          - generic [ref=e71]:
+            - button "Copy content" [ref=e78]:
+              - generic [ref=e79]:
+                - img
+              - generic [ref=e80]: Copy content
+            - button "Refresh" [ref=e81]:
+              - img
+              - generic [ref=e82]: Refresh
+        - generic [ref=e84]:
+          - generic [ref=e86]:
+            - 'heading "Tool Result: generate_image" [level=3] [ref=e87]':
+              - text: "Tool Result:"
+              - code [ref=e88]: generate_image
+            - code [ref=e89]: generate_image:0
+          - generic [ref=e90]:
+            - code [ref=e93]: 我已根据您的描述生成了图像： ![生成的图像](https://maas-watermark-prod-new.cn-wlcb.ufileos.com/20260331103702d0c5b4c09b0743e9_watermark.png?UCloudPublicKey=TOKEN_6df395df-5d8c-4f69-90f8-a4fe46088958&Signature=u1U9HidKylXoq0pP%2FUM0dSYHitw%3D&Expires=1775529429) **提示词：** 一只可爱的卡通猫咪，坐在月球上看星星，用柔和的色调 *您可以点击下载按钮保存图像。*
+            - button [ref=e94] [cursor=pointer]:
+              - img [ref=e95]
+        - generic [ref=e98]:
+          - paragraph [ref=e101]: 这是一只可爱的卡通猫咪，坐在月球上看星星的图像。图像采用了柔和的色调，营造出宁静而梦幻的氛围。猫咪的表情显得非常满足和好奇，仿佛在享受这宁静的夜晚。
+          - generic [ref=e103]:
+            - button "Copy content" [ref=e104]:
+              - generic [ref=e105]:
+                - img
+              - generic [ref=e106]: Copy content
+            - button "Refresh" [ref=e107]:
+              - img
+              - generic [ref=e108]: Refresh
+      - generic [ref=e25]:
+        - textbox "Type your message..." [ref=e26]
+        - generic [ref=e27]:
+          - button [ref=e28]:
+            - img
+          - button [disabled]:
+            - img
+  - region "Notifications alt+T"

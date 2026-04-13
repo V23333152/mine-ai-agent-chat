@@ -1,0 +1,19 @@
+# Python 3.14 兼容版本（实验性）
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+pyyaml==6.0.1
+
+# 使用最新版 numpy
+numpy>=1.26.0
+
+# PyTorch  nightly 版本支持 Python 3.14
+--index-url https://download.pytorch.org/whl/nightly/cu121
+torch
+torchaudio
+
+# 其他依赖
+librosa
+soundfile
+requests
+python-multipart

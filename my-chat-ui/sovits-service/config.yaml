@@ -1,0 +1,41 @@
+# GPT-SoVITS 服务配置
+service:
+  host: "127.0.0.1"
+  port: 8880
+  debug: false
+
+# GPT-SoVITS 安装路径（用于导入推理模块）
+gpt_sovits_path: "../GPT-SoVITS"
+
+# 模型配置
+models:
+  base_path: "../sovits-models"
+  
+  characters:
+    - id: "芙宁娜_ZH"
+      name: "芙宁娜"
+      description: "原神角色芙宁娜，活泼可爱的少女音"
+      language: "zh"
+      gpt_model: "芙宁娜_ZH/gpt.pth"
+      sovits_model: "芙宁娜_ZH/sovits.ckpt"
+      references:
+        default: "芙宁娜_ZH/reference/【默认】根据故事走向，前往特定情景吗？听起来挺新颖。所以信封里写了什么？.wav"
+
+# 推理参数
+inference:
+  default_params:
+    text_language: "zh"
+    refer_wav_path: null
+    prompt_text: null
+    prompt_language: "zh"
+    top_k: 5
+    top_p: 1.0
+    temperature: 1.0
+    speed: 1.0
+  
+  # 音频输出设置
+  output:
+    format: "mp3"
+    sample_rate: 32000
+    temp_dir: "./temp"
+    max_text_length: 50

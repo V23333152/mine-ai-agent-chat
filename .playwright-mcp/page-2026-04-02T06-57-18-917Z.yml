@@ -1,0 +1,102 @@
+- generic [ref=e2]:
+  - generic [ref=e33]:
+    - generic [ref=e140]:
+      - generic [ref=e141]:
+        - button [ref=e143]:
+          - img
+        - button "Agent Chat" [ref=e144] [cursor=pointer]:
+          - img [ref=e145]
+          - generic [ref=e147]: Agent Chat
+      - generic [ref=e148]:
+        - generic "点击打开向量库面板" [ref=e149] [cursor=pointer]:
+          - img [ref=e150]
+          - generic [ref=e154]: 默认知识库
+        - button "MCP Servers" [ref=e155]:
+          - img
+          - generic [ref=e156]: MCP Servers
+        - button "Vector Database" [ref=e157]:
+          - img
+          - generic [ref=e158]: Vector Database
+        - link "GitHub" [ref=e160] [cursor=pointer]:
+          - /url: https://github.com/langchain-ai/agent-chat-ui
+          - img "GitHub" [ref=e161]
+        - button "New thread" [ref=e163]:
+          - img
+          - generic [ref=e164]: New thread
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e167]:
+          - paragraph [ref=e169]: 搜索知识库，告诉我关于测试阶段的内容
+          - generic [ref=e171]:
+            - button "Copy content" [ref=e172]:
+              - generic [ref=e173]:
+                - img
+              - generic [ref=e174]: Copy content
+            - button "Edit" [ref=e175]:
+              - img
+              - generic [ref=e176]: Edit
+        - generic [ref=e178]:
+          - generic [ref=e180]:
+            - heading "search_documentssearch_documents:0" [level=3] [ref=e182]:
+              - text: search_documents
+              - code [ref=e183]: search_documents:0
+            - table [ref=e184]:
+              - rowgroup [ref=e185]:
+                - row "query 测试阶段" [ref=e186]:
+                  - cell "query" [ref=e187]
+                  - cell "测试阶段" [ref=e188]
+                - row "user_id default" [ref=e189]:
+                  - cell "user_id" [ref=e190]
+                  - cell "default" [ref=e191]
+                - row "collection_name default" [ref=e192]:
+                  - cell "collection_name" [ref=e193]
+                  - cell "default" [ref=e194]
+                - row "k 5" [ref=e195]:
+                  - cell "k" [ref=e196]
+                  - cell "5" [ref=e197]
+          - generic [ref=e199]:
+            - button "播放语音" [ref=e200]:
+              - generic [ref=e201]:
+                - img
+              - generic [ref=e202]: 播放语音
+            - button "Copy content" [ref=e203]:
+              - generic [ref=e204]:
+                - img
+              - generic [ref=e205]: Copy content
+            - button "Refresh" [ref=e206]:
+              - img
+              - generic [ref=e207]: Refresh
+        - generic [ref=e209]:
+          - generic [ref=e211]:
+            - 'heading "Tool Result: search_documents" [level=3] [ref=e212]':
+              - text: "Tool Result:"
+              - code [ref=e213]: search_documents
+            - code [ref=e214]: search_documents:0
+          - paragraph [ref=e220]:
+            - text: "Error searching documents: fetch failed. Please ensure the unified backend is running at"
+            - link "http://localhost:8000" [ref=e221] [cursor=pointer]:
+              - /url: http://localhost:8000
+        - generic [ref=e223]:
+          - paragraph [ref=e226]: 抱歉，目前无法搜索知识库。请稍后再试。
+          - generic [ref=e228]:
+            - button "播放语音" [ref=e229]:
+              - generic [ref=e230]:
+                - img
+              - generic [ref=e231]: 播放语音
+            - button "Copy content" [ref=e232]:
+              - generic [ref=e233]:
+                - img
+              - generic [ref=e234]: Copy content
+            - button "Refresh" [ref=e235]:
+              - img
+              - generic [ref=e236]: Refresh
+      - generic [ref=e57]:
+        - textbox "使用 \"默认知识库\" 回答您的问题..." [active] [ref=e58]
+        - generic [ref=e59]:
+          - button [ref=e60]:
+            - img
+          - button "语音输入" [ref=e62]:
+            - img
+          - button [disabled]:
+            - img
+  - region "Notifications alt+T"

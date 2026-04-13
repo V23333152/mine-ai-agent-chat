@@ -1,0 +1,79 @@
+# AI Scheduler 配置文件
+version: "1.0"
+
+# ========== Cron 定时任务 ==========
+cron_jobs:
+  # 每日晨报 - 每天早上8点执行
+  - name: morning-briefing
+    mode: cron
+    schedule: "0 8 * * *"
+    timezone: "Asia/Shanghai"
+    prompt: |
+      请根据当前日期 {{date}} 和天气情况，生成今日晨报：
+
+      ## 1. 今日概览
+      - 日期：{{date}}
+      - 星期：{{weekday}}
+      - 节气/节日：{{festival}}
+
+      ## 2. 天气情况
+      - 今日天气：{{weather}}
+      - 温度：{{temperature}}
+      - 穿衣建议：{{clothing_advice}}
+      - 出行建议：{{travel_advice}}
+
+      ## 3. 今日待办
+      - 检查日历中的会议和约会
+      - 查看待办事项列表
+      - 规划今日工作重点
+
+      ## 4. 健康提醒
+      - 根据天气情况给出健康建议
+      - 提醒适当运动和休息
+
+      请用友好、简洁的语言生成晨报。
+    model: kimi-k2.5
+    enabled: true
+
+  # 午休提醒 - 每天中午12:30执行
+  - name: 午休提醒
+    mode: cron
+    schedule: "30 12 * * *"
+    timezone: "Asia/Shanghai"
+    prompt: "午休时间到了，请放下工作，好好休息一下吧。建议小睡20-30分钟，下午精力更充沛！"
+    model: kimi-k2.5
+    enabled: true
+
+  # 下班提醒 - 每天下午6点执行
+  - name: 下班提醒
+    mode: cron
+    schedule: "0 18 * * *"
+    timezone: "Asia/Shanghai"
+    prompt: "下班时间到了，准备回家。今天辛苦了，好好休息，明天继续加油！"
+    model: kimi-k2.5
+    enabled: true
+
+# ========== Heartbeat 智能检查 ==========
+heartbeat:
+  enabled: true
+  interval: 60  # 测试用，每分钟检查
+  silent_hours: [23, 7]
+
+# ========== 存储配置 ==========
+storage:
+  type: "sqlite"
+  path: "./data/scheduler.db"
+
+# ========== LLM 配置 ==========
+llm:
+  default_model: "kimi-k2.5"  # Kimi K2.5 模型
+  api_key: null  # 从环境变量 MOONSHOT_API_KEY 或 OPENAI_API_KEY 读取
+  base_url: "https://api.moonshot.cn/v1"  # Kimi API endpoint
+  temperature: 1.0  # Kimi K2.5 只接受 temperature=1
+
+# ========== 通知界面配置 ==========
+# 任务触发时自动打开浏览器界面显示对话
+notify_ui:
+  enabled: true              # 是否启用通知界面
+  port: 8765                 # WebSocket 服务器端口
+  auto_open_browser: true    # 是否自动打开浏览器

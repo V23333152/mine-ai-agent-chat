@@ -1,0 +1,104 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - generic:
+            - button:
+              - img
+          - generic:
+            - button:
+              - img
+              - generic: 实时语音对话
+            - button:
+              - img
+              - generic: MCP Servers
+            - button:
+              - img
+              - generic: Vector Database
+            - link:
+              - /url: https://github.com/langchain-ai/agent-chat-ui
+              - img
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - img
+                - heading [level=1]: Agent Chat
+              - generic:
+                - generic:
+                  - generic:
+                    - textbox:
+                      - /placeholder: 使用 "默认知识库" 回答您的问题...
+                    - generic:
+                      - button:
+                        - img
+                      - generic:
+                        - button:
+                          - img
+                      - button [disabled]:
+                        - img
+    - region "Notifications alt+T"
+  - dialog "向量数据库" [ref=e64]:
+    - heading "向量数据库" [level=2] [ref=e66]
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - img [ref=e72]
+            - generic [ref=e74]: 知识库集合
+          - button "新建" [ref=e75]:
+            - img
+            - text: 新建
+        - generic [ref=e77] [cursor=pointer]:
+          - generic [ref=e78]:
+            - img [ref=e79]
+            - generic [ref=e82]:
+              - paragraph [ref=e83]: default
+              - paragraph [ref=e84]: 默认知识库
+          - generic [ref=e86]: "6"
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - img [ref=e90]
+          - generic [ref=e94]:
+            - paragraph [ref=e95]: 总文档
+            - paragraph [ref=e96]: "6"
+        - generic [ref=e97]:
+          - img [ref=e99]
+          - generic [ref=e102]:
+            - paragraph [ref=e103]: 当前集合
+            - paragraph [ref=e104]: "6"
+      - generic [ref=e105]:
+        - button "上传" [ref=e106]
+        - button [ref=e107]:
+          - img
+        - button "清空" [ref=e108]:
+          - img
+          - generic [ref=e109]: 清空
+      - generic [ref=e111]:
+        - textbox "搜索 \"default\" 中的文档..." [active] [ref=e112]: test
+        - button [ref=e113]:
+          - img
+      - generic [ref=e119]:
+        - generic [ref=e120]:
+          - heading "搜索结果 (1)" [level=3] [ref=e121]
+          - button "清除" [ref=e122]
+        - generic [ref=e124]:
+          - generic [ref=e125]:
+            - button "企业级项目实施流程模板.md 分块 1/6" [ref=e126]:
+              - img [ref=e127]
+              - generic [ref=e130]:
+                - paragraph [ref=e131]: 企业级项目实施流程模板.md
+                - paragraph [ref=e132]: 分块 1/6
+              - img [ref=e133]
+            - button [ref=e135]:
+              - img
+          - paragraph [ref=e137]:
+            - text: ...ign，详细设计 SIT System Integration
+            - mark [ref=e138]: Test
+            - text: ，系统集成测试 UAT User Acceptance
+            - mark [ref=e139]: Test
+            - text: ，用户验收测试 ----------------------------------------...
+    - button "Close" [ref=e114]:
+      - img [ref=e115]
+      - generic [ref=e118]: Close

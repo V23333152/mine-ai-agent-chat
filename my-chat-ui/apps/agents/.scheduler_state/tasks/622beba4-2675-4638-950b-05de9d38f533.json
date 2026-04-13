@@ -1,0 +1,15 @@
+{
+  "task_id": "622beba4-2675-4638-950b-05de9d38f533",
+  "task_name": "每日新闻",
+  "total_runs": 3,
+  "successful_runs": 2,
+  "failed_runs": 1,
+  "last_run": 1775791593.1292806,
+  "last_success": 1775791407.3056037,
+  "last_failure": 1775791593.1292806,
+  "status": "error",
+  "next_run": null,
+  "consecutive_failures": 1,
+  "last_error": "Error code: 400 - {'error': {'code': 400, 'message': 'The request was rejected because it was considered high risk', 'param': 'prompt', 'type': 'content_filter'}}",
+  "custom_data": {}
+}

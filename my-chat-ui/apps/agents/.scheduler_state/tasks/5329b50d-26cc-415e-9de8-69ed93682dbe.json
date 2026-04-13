@@ -1,0 +1,15 @@
+{
+  "task_id": "5329b50d-26cc-415e-9de8-69ed93682dbe",
+  "task_name": "午餐提醒",
+  "total_runs": 2,
+  "successful_runs": 2,
+  "failed_runs": 0,
+  "last_run": 1776051029.3657427,
+  "last_success": 1776051029.3657427,
+  "last_failure": null,
+  "status": "idle",
+  "next_run": null,
+  "consecutive_failures": 0,
+  "last_error": null,
+  "custom_data": {}
+}

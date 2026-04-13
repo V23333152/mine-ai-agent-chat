@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "amap-lbs-skill": {
+      "source": "modelscope.cn",
+      "sourceType": "well-known",
+      "computedHash": "6db37138ddd02a4270b06e7673d1b4dbc2132febc99b956a4c4e6de7383cde9d"
+    }
+  }
+}

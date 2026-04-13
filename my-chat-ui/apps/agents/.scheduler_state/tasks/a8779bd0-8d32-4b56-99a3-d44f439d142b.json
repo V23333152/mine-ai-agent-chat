@@ -1,0 +1,15 @@
+{
+  "task_id": "a8779bd0-8d32-4b56-99a3-d44f439d142b",
+  "task_name": "morning-briefing",
+  "total_runs": 5,
+  "successful_runs": 5,
+  "failed_runs": 0,
+  "last_run": 1775726546.4086325,
+  "last_success": 1775726546.4086325,
+  "last_failure": null,
+  "status": "idle",
+  "next_run": null,
+  "consecutive_failures": 0,
+  "last_error": null,
+  "custom_data": {}
+}

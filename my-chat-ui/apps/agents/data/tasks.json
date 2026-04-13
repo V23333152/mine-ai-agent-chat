@@ -1,0 +1,73 @@
+[
+  {
+    "name": "morning-briefing",
+    "status": "idle",
+    "id": "80010fac-11f7-4f75-b80c-7865e2f1573b",
+    "mode": "cron",
+    "schedule": "0 8 * * *",
+    "enabled": true,
+    "totalRuns": 7,
+    "successfulRuns": 7,
+    "failedRuns": 0,
+    "createdAt": "2026-04-09T03:26:26.568Z",
+    "lastRun": "2026-04-09T09:32:06.626Z"
+  },
+  {
+    "id": "2dbc88fe-8bd7-4a73-94d6-599f08d85f51",
+    "name": "午休提醒",
+    "mode": "cron",
+    "status": "idle",
+    "enabled": true,
+    "totalRuns": 23,
+    "successfulRuns": 23,
+    "failedRuns": 0,
+    "createdAt": "2026-04-09T03:32:04.787Z",
+    "schedule": "30 12 * * *",
+    "timezone": "Asia/Shanghai",
+    "description": "午休时间到了",
+    "lastRun": "2026-04-13T05:09:12.181Z"
+  },
+  {
+    "name": "下班提醒",
+    "status": "idle",
+    "id": "951499f1-ef61-4e01-9927-3597307da781",
+    "mode": "cron",
+    "schedule": "0 18 * * *",
+    "enabled": true,
+    "totalRuns": 5,
+    "successfulRuns": 5,
+    "failedRuns": 0,
+    "createdAt": "2026-04-09T09:37:23.638Z",
+    "lastRun": "2026-04-10T08:01:42.301Z"
+  },
+  {
+    "id": "04b0051e-3a04-4f64-9f92-89622b36a3c4",
+    "name": "每日新闻",
+    "mode": "cron",
+    "schedule": "30 9 * * *",
+    "scheduleDescription": "每天早上9点半",
+    "timezone": "Asia/Shanghai",
+    "description": "请联网搜索当日的前十热点新闻，并在通知界面中总结简写每条新闻内容并在结尾贴上对应链接。",
+    "status": "idle",
+    "enabled": true,
+    "totalRuns": 17,
+    "successfulRuns": 17,
+    "failedRuns": 0,
+    "createdAt": "2026-04-10T02:32:34.211Z",
+    "lastRun": "2026-04-10T06:30:31.120Z"
+  },
+  {
+    "id": "7e62b53e-50b0-4c80-a7ac-9390dbe2399e",
+    "name": "午餐提醒",
+    "mode": "cron",
+    "status": "idle",
+    "enabled": true,
+    "totalRuns": 0,
+    "successfulRuns": 0,
+    "failedRuns": 0,
+    "createdAt": "2026-04-13T02:27:55.685Z",
+    "schedule": "30 11 * * *",
+    "timezone": "Asia/Shanghai",
+    "description": "提醒用户该吃午饭了，并调用高德地图skill推荐附近餐馆。"
+  }
+]
