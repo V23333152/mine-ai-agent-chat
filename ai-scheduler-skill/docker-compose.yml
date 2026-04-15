@@ -1,0 +1,99 @@
+# AI Scheduler Skill - Docker Compose 配置
+# 支持单机部署和开发调试
+
+version: '3.8'
+
+services:
+  # MCP 服务（主要服务）
+  scheduler-mcp:
+    build: .
+    container_name: ai-scheduler-mcp
+    environment:
+      # API Keys - 从环境变量或 .env 文件读取
+      - MOONSHOT_API_KEY=${MOONSHOT_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - AMAP_WEBSERVICE_KEY=${AMAP_WEBSERVICE_KEY:-}
+
+      # 配置路径
+      - SCHEDULER_CONFIG=/app/config/scheduler.yaml
+
+      # 日志级别
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+      # Python 设置
+      - PYTHONUNBUFFERED=1
+
+    volumes:
+      # 配置文件
+      - ./config:/app/config:ro
+      # 数据持久化
+      - scheduler-data:/app/data
+      # 日志
+      - ./logs:/app/logs
+
+    ports:
+      # WebSocket 通知端口
+      - "${NOTIFY_UI_PORT:-8765}:8765"
+
+    # 使用 stdin/stdout 进行 MCP 通信
+    stdin_open: true
+    tty: true
+
+    # 重启策略
+    restart: unless-stopped
+
+    # 健康检查
+    healthcheck:
+      test: ["CMD", "python", "-c", "import scheduler_skill; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # API 服务（可选，用于 REST API 访问）
+  scheduler-api:
+    build: .
+    container_name: ai-scheduler-api
+    command: api --host 0.0.0.0 --port 8000
+    environment:
+      - MOONSHOT_API_KEY=${MOONSHOT_API_KEY}
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
+      - AMAP_WEBSERVICE_KEY=${AMAP_WEBSERVICE_KEY:-}
+      - SCHEDULER_CONFIG=/app/config/scheduler.yaml
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+
+    volumes:
+      - ./config:/app/config:ro
+      - scheduler-data:/app/data
+      - ./logs:/app/logs
+
+    ports:
+      - "${API_PORT:-8000}:8000"
+
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/stats')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # 前端 UI（可选，独立容器）
+  scheduler-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile.ui
+    container_name: ai-scheduler-ui
+    environment:
+      - WS_URL=ws://localhost:8765/ws
+    ports:
+      - "${UI_PORT:-3000}:80"
+    depends_on:
+      - scheduler-mcp
+    restart: unless-stopped
+
+# 数据卷
+volumes:
+  scheduler-data:
+    driver: local

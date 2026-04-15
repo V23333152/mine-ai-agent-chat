@@ -1,0 +1,60 @@
+# AI Scheduler - Docker 配置文件
+# 此配置针对容器化环境优化
+
+version: "1.0"
+
+# ========== LLM 配置 ==========
+llm:
+  default_model: "kimi-k2.5"
+  api_key: null  # 从环境变量 MOONSHOT_API_KEY 读取
+  base_url: "https://api.moonshot.cn/v1"
+  temperature: 1.0  # Kimi K2.5 只接受 temperature=1
+
+# ========== 存储配置 ==========
+storage:
+  type: "sqlite"
+  path: "/app/data/scheduler.db"
+
+# ========== 通知界面配置 ==========
+notify_ui:
+  enabled: true
+  port: 8765
+  auto_open_browser: false  # Docker 中禁用自动打开浏览器
+
+# ========== Cron 定时任务 ==========
+# 示例任务，可根据需要修改
+cron_jobs:
+  # 每日晨报 - 每天早上8点执行
+  - name: morning-briefing
+    mode: cron
+    schedule: "0 8 * * *"
+    timezone: "Asia/Shanghai"
+    prompt: |
+      请根据当前日期和天气情况，生成今日晨报：
+
+      ## 1. 今日概览
+      - 日期和星期
+      - 天气情况
+
+      ## 2. 今日待办
+      - 检查日历中的会议和约会
+      - 规划今日工作重点
+
+      请用友好、简洁的语言生成晨报。
+    model: kimi-k2.5
+    enabled: true
+
+  # 每日新闻 - 每天早上9点半执行
+  - name: 每日新闻
+    mode: cron
+    schedule: "30 9 * * *"
+    timezone: "Asia/Shanghai"
+    prompt: "联网搜索当日热点，整理5条重要信息"
+    model: kimi-k2.5
+    enabled: true
+
+# ========== Heartbeat 智能检查 ==========
+heartbeat:
+  enabled: true
+  interval: 300  # 5分钟检查一次
+  silent_hours: [23, 7]

@@ -1,0 +1,270 @@
+# AI Scheduler Skill - 可移植性测试工作流
+# 在多个平台和部署方式上测试项目的可移植性
+
+name: Portability Test
+
+on:
+  push:
+    branches: [ main, master, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # 每周一早上8点运行
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: '测试模式'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+          - quick
+          - full
+
+jobs:
+  # ==================== 快速测试 ====================
+  quick-test:
+    name: Quick Test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run quick portability test
+        run: |
+          chmod +x scripts/test-portability.sh
+          ./scripts/test-portability.sh --quick
+
+  # ==================== 完整测试矩阵 ====================
+  full-test:
+    name: Full Test - ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ['3.10', '3.11', '3.12']
+        exclude:
+          # 减少测试组合，节省CI时间
+          - os: macos-latest
+            python: '3.10'
+          - os: windows-latest
+            python: '3.10'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Set up Docker (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install docker
+          # Docker on macOS requires Docker Desktop
+          echo "Docker on macOS requires Docker Desktop installation"
+
+      - name: Run portability test (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          chmod +x scripts/test-portability.sh
+          ./scripts/test-portability.sh --full
+        continue-on-error: true
+
+      - name: Run portability test (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process -Force
+          .\scripts\test-portability.ps1 -Full
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results-${{ matrix.os }}-py${{ matrix.python }}
+          path: |
+            /tmp/ai-scheduler-test-*/report.md
+            /tmp/ai-scheduler-test-*/results.json
+          retention-days: 30
+
+  # ==================== Docker 构建测试 ====================
+  docker-build-test:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t ai-scheduler:test .
+          docker images ai-scheduler:test
+
+      - name: Test container startup
+        run: |
+          mkdir -p /tmp/test-config
+          cat > /tmp/test-config/scheduler.yaml << 'EOF'
+          version: "1.0"
+          cron_jobs: []
+          heartbeat:
+            enabled: false
+          storage:
+            type: "sqlite"
+            path: "/app/data/test.db"
+          EOF
+
+          docker run --rm \
+            -e MOONSHOT_API_KEY="test" \
+            -e TAVILY_API_KEY="test" \
+            -v /tmp/test-config/scheduler.yaml:/app/config/scheduler.yaml:ro \
+            ai-scheduler:test \
+            python -c "import scheduler_skill; print('Docker test passed')"
+
+      - name: Check image size
+        run: |
+          IMAGE_SIZE=$(docker images ai-scheduler:test --format "{{.Size}}")
+          echo "Image size: $IMAGE_SIZE"
+
+          # 提取数值进行比较（简化版）
+          if [[ "$IMAGE_SIZE" == *"GB"* ]]; then
+            echo "⚠️ Warning: Image size is larger than 1GB"
+          fi
+
+      - name: Scan for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'ai-scheduler:test'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload scan results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docker-scan-results
+          path: trivy-results.sarif
+
+  # ==================== Docker Compose 测试 ====================
+  docker-compose-test:
+    name: Docker Compose Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create test environment
+        run: |
+          cp .env.example .env
+          echo "MOONSHOT_API_KEY=test-key" >> .env
+          echo "TAVILY_API_KEY=test-key" >> .env
+
+      - name: Start services
+        run: |
+          docker-compose up -d scheduler-mcp
+          sleep 10
+
+      - name: Check service health
+        run: |
+          docker-compose ps
+          docker-compose logs --tail=20 scheduler-mcp
+
+      - name: Test API service
+        run: |
+          docker-compose up -d scheduler-api
+          sleep 5
+          curl -s http://localhost:8000/api/v1/stats || echo "API not responding"
+
+      - name: Cleanup
+        if: always()
+        run: docker-compose down -v
+
+  # ==================== 多架构构建测试 ====================
+  multi-arch-test:
+    name: Multi-Architecture Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build multi-platform images
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --tag ai-scheduler:multi-arch \
+            --output type=image,push=false \
+            .
+
+  # ==================== 生成测试报告 ====================
+  generate-report:
+    name: Generate Test Report
+    needs: [full-test, docker-build-test, docker-compose-test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Generate summary report
+        run: |
+          echo "# AI Scheduler Skill - 可移植性测试报告" > summary-report.md
+          echo "" >> summary-report.md
+          echo "**测试时间**: $(date -Iseconds)" >> summary-report.md
+          echo "" >> summary-report.md
+          echo "## 测试结果汇总" >> summary-report.md
+          echo "" >> summary-report.md
+          echo "| 测试项 | 状态 |" >> summary-report.md
+          echo "|-------|------|" >> summary-report.md
+          echo "| 多平台Python测试 | ${{ needs.full-test.result }} |" >> summary-report.md
+          echo "| Docker构建测试 | ${{ needs.docker-build-test.result }} |" >> summary-report.md
+          echo "| Docker Compose测试 | ${{ needs.docker-compose-test.result }} |" >> summary-report.md
+          echo "" >> summary-report.md
+
+          if [ "${{ needs.full-test.result }}" == "success" ] && [ "${{ needs.docker-build-test.result }}" == "success" ]; then
+            echo "✅ 所有可移植性测试通过！" >> summary-report.md
+          else
+            echo "⚠️ 部分测试未通过，请查看详细日志。" >> summary-report.md
+          fi
+
+          cat summary-report.md
+
+      - name: Upload summary report
+        uses: actions/upload-artifact@v4
+        with:
+          name: portability-test-summary
+          path: summary-report.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('summary-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

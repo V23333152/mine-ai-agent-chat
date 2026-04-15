@@ -1,0 +1,74 @@
+{
+  "name": "AI Scheduler Skill - Docker Dev",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "20"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "GitHub.vscode-github-actions",
+        "ms-vscode.makefile-tools"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "/usr/local/py-utils/bin/autopep8",
+        "python.formatting.blackPath": "/usr/local/py-utils/bin/black",
+        "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
+      }
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "forwardPorts": [8000, 8765, 3000, 8080],
+  "portsAttributes": {
+    "8000": {
+      "label": "Scheduler API",
+      "onAutoForward": "notify"
+    },
+    "8765": {
+      "label": "WebSocket Notifications",
+      "onAutoForward": "silent"
+    },
+    "3000": {
+      "label": "Scheduler UI",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "GitHub Pages (Docs)",
+      "onAutoForward": "silent"
+    }
+  },
+  "remoteUser": "vscode",
+  "runArgs": ["--init", "--privileged"],
+  "mounts": [
+    "source=${localWorkspaceFolder}/.env,target=/workspaces/ai-scheduler-skill/.env,type=bind,consistency=cached"
+  ],
+  "secrets": {
+    "MOONSHOT_API_KEY": {
+      "description": "Moonshot AI API Key (可选，用于测试)",
+      "documentationUrl": "https://platform.moonshot.cn/"
+    },
+    "TAVILY_API_KEY": {
+      "description": "Tavily Search API Key (可选，用于测试)",
+      "documentationUrl": "https://tavily.com/"
+    },
+    "AMAP_WEBSERVICE_KEY": {
+      "description": "高德地图 API Key (可选)",
+      "documentationUrl": "https://lbs.amap.com/"
+    }
+  }
+}

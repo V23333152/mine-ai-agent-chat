@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Scheduler - API 测试</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            line-height: 1.6;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; }
+        h1 { color: #58a6ff; margin-bottom: 10px; }
+        .subtitle { color: #8b949e; margin-bottom: 30px; }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card h2 { color: #7ee787; margin-bottom: 15px; font-size: 18px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #8b949e; font-size: 14px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #c9d1d9;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #238636;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        button:hover { background: #2ea043; }
+        button.secondary { background: #1f6feb; }
+        button.secondary:hover { background: #388bfd; }
+        .result {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .result.success { border-color: #238636; }
+        .result.error { border-color: #f85149; }
+        .status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .status.online { background: #238636; }
+        .status.offline { background: #f85149; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .endpoint {
+            background: #21262d;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+        }
+        .method { color: #7ee787; font-weight: bold; }
+        .url { color: #79c0ff; }
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 AI Scheduler Skill - API 测试</h1>
+        <p class="subtitle">在浏览器中测试 Docker 部署的调度器服务</p>
+
+        <!-- 服务状态 -->
+        <div class="card">
+            <h2>服务状态 <span id="api-status" class="status offline">检查中...</span></h2>
+            <div class="grid">
+                <div class="endpoint"><span class="method">GET</span> <span class="url">/api/v1/stats</span></div>
+                <div class="endpoint"><span class="method">GET</span> <span class="url">/api/v1/tasks</span></div>
+                <div class="endpoint"><span class="method">POST</span> <span class="url">/api/v1/tasks</span></div>
+                <div class="endpoint"><span class="method">WS</span> <span class="url">ws://localhost:8765</span></div>
+            </div>
+            <button onclick="checkStatus()">🔄 检查状态</button>
+            <div id="status-result" class="result" style="display:none"></div>
+        </div>
+
+        <!-- 获取任务列表 -->
+        <div class="card">
+            <h2>📋 获取任务列表</h2>
+            <button onclick="listTasks()">获取任务</button>
+            <div id="tasks-result" class="result" style="display:none"></div>
+        </div>
+
+        <!-- 创建任务 -->
+        <div class="card">
+            <h2>➕ 创建任务</h2>
+            <div class="form-group">
+                <label>任务名称</label>
+                <input type="text" id="task-name" value="测试任务" placeholder="输入任务名称">
+            </div>
+            <div class="form-group">
+                <label>Cron 表达式</label>
+                <select id="task-schedule">
+                    <option value="*/5 * * * *">每 5 分钟</option>
+                    <option value="0 * * * *">每小时</option>
+                    <option value="0 9 * * *">每天上午 9 点</option>
+                    <option value="0 0 * * *">每天午夜</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Skill 名称</label>
+                <input type="text" id="task-skill" value="news_search" placeholder="news_search">
+            </div>
+            <div class="form-group">
+                <label>参数 (JSON)</label>
+                <textarea id="task-args" rows="3">{"query": "科技新闻"}</textarea>
+            </div>
+            <button onclick="createTask()">创建任务</button>
+            <button class="secondary" onclick="testNewsTask()">🗞️ 快速创建新闻任务</button>
+            <div id="create-result" class="result" style="display:none"></div>
+        </div>
+
+        <!-- WebSocket 测试 -->
+        <div class="card">
+            <h2>📡 WebSocket 测试 <span id="ws-status" class="status offline">未连接</span></h2>
+            <button onclick="connectWebSocket()">连接</button>
+            <button onclick="disconnectWebSocket()">断开</button>
+            <div id="ws-result" class="result" style="display:none"></div>
+        </div>
+
+        <!-- API 基础地址 -->
+        <div class="card">
+            <h2>⚙️ API 配置</h2>
+            <div class="form-group">
+                <label>API 基础地址</label>
+                <input type="text" id="api-base" value="http://localhost:8000" placeholder="http://localhost:8000">
+            </div>
+            <p style="color: #8b949e; font-size: 13px;">
+                在 GitHub Codespaces 中使用时，请替换为转发后的 URL，例如：<br>
+                <code>https://your-codespace-name-8000.github.dev</code>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        const getApiBase = () => document.getElementById('api-base').value.replace(/\/$/, '');
+
+        // 检查服务状态
+        async function checkStatus() {
+            const resultDiv = document.getElementById('status-result');
+            const statusSpan = document.getElementById('api-status');
+
+            try {
+                const response = await fetch(`${getApiBase()}/api/v1/stats`);
+                const data = await response.json();
+
+                statusSpan.textContent = '在线';
+                statusSpan.className = 'status online';
+
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                statusSpan.textContent = '离线';
+                statusSpan.className = 'status offline';
+
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `连接失败: ${error.message}\n\n请确保:\n1. 服务已启动 (docker-compose up -d)\n2. API 地址正确\n3. 在 Codespaces 中使用时，端口已转发并设置为 Public`;
+            }
+        }
+
+        // 获取任务列表
+        async function listTasks() {
+            const resultDiv = document.getElementById('tasks-result');
+
+            try {
+                const response = await fetch(`${getApiBase()}/api/v1/tasks`);
+                const data = await response.json();
+
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `获取失败: ${error.message}`;
+            }
+        }
+
+        // 创建任务
+        async function createTask() {
+            const resultDiv = document.getElementById('create-result');
+
+            const name = document.getElementById('task-name').value;
+            const schedule = document.getElementById('task-schedule').value;
+            const skillName = document.getElementById('task-skill').value;
+            const argsText = document.getElementById('task-args').value;
+
+            let args;
+            try {
+                args = JSON.parse(argsText);
+            } catch (e) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '参数 JSON 格式错误';
+                return;
+            }
+
+            const task = {
+                name,
+                schedule,
+                skill_name: skillName,
+                arguments: args,
+                enabled: true
+            };
+
+            try {
+                const response = await fetch(`${getApiBase()}/api/v1/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(task)
+                });
+                const data = await response.json();
+
+                resultDiv.style.display = 'block';
+                resultDiv.className = response.ok ? 'result success' : 'result error';
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `创建失败: ${error.message}`;
+            }
+        }
+
+        // 快速创建新闻任务
+        function testNewsTask() {
+            document.getElementById('task-name').value = '每日新闻';
+            document.getElementById('task-schedule').value = '0 9 * * *';
+            document.getElementById('task-skill').value = 'news_search';
+            document.getElementById('task-args').value = JSON.stringify({ query: '今日热点新闻' }, null, 2);
+            createTask();
+        }
+
+        // 连接 WebSocket
+        function connectWebSocket() {
+            const resultDiv = document.getElementById('ws-result');
+            const statusSpan = document.getElementById('ws-status');
+
+            if (ws) {
+                ws.close();
+            }
+
+            const wsUrl = getApiBase().replace('http', 'ws').replace('https', 'wss');
+
+            try {
+                ws = new WebSocket(`${wsUrl}/ws`);
+
+                ws.onopen = () => {
+                    statusSpan.textContent = '已连接';
+                    statusSpan.className = 'status online';
+                    resultDiv.style.display = 'block';
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent += '[连接成功]\n';
+                };
+
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    resultDiv.textContent += `[收到消息] ${JSON.stringify(data)}\n`;
+                    resultDiv.scrollTop = resultDiv.scrollHeight;
+                };
+
+                ws.onerror = (error) => {
+                    statusSpan.textContent = '错误';
+                    statusSpan.className = 'status offline';
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent += `[错误] ${error}\n`;
+                };
+
+                ws.onclose = () => {
+                    statusSpan.textContent = '已断开';
+                    statusSpan.className = 'status offline';
+                    resultDiv.textContent += '[连接关闭]\n';
+                };
+            } catch (error) {
+                statusSpan.textContent = '错误';
+                statusSpan.className = 'status offline';
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `连接失败: ${error.message}`;
+            }
+        }
+
+        // 断开 WebSocket
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        // 页面加载时自动检查状态
+        window.onload = () => {
+            checkStatus();
+        };
+    </script>
+</body>
+</html>

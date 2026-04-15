@@ -1,0 +1,218 @@
+# AI Scheduler Skill - 配置文件示例
+# 这是统一的YAML配置，一个文件管理所有任务
+
+version: "1.0"
+
+# 存储配置
+storage:
+  type: sqlite  # sqlite, postgresql, redis, memory
+  path: ./scheduler.db  # SQLite文件路径
+  # url: postgresql://user:pass@localhost/scheduler  # PostgreSQL连接URL
+
+# 状态管理
+state_dir: ./.scheduler_state
+log_dir: ./logs
+
+# API服务配置
+api:
+  host: 0.0.0.0
+  port: 8000
+  prefix: /api/v1
+
+# MCP配置
+mcp:
+  transport: stdio  # stdio, sse
+  server_name: ai-scheduler
+
+# 默认模型配置
+default_model:
+  provider: openai  # openai, anthropic, ollama, deepseek
+  model: gpt-4o-mini  # 默认使用低成本模型
+  # api_key: ${OPENAI_API_KEY}  # 从环境变量读取
+  temperature: 0.7
+  max_tokens: 2000
+
+# ========== 任务配置 ==========
+
+# 方式1: Cron任务 - 精确时间执行
+cron_jobs:
+  # 示例1: 每日晨报
+  - name: morning-briefing
+    schedule: "0 8 * * *"  # 每天早上8点
+    timezone: Asia/Shanghai
+    prompt: |
+      你是Morning Briefing Agent。生成今日晨报：
+      
+      1. 查询今日天气（温度、降雨概率、穿衣建议）
+      2. 列出今天的日历事件
+      3. 总结昨晚到现在的未读邮件（按重要性排序）
+      
+      请用Markdown格式输出：
+      ## 🌤 今日天气
+      ## 📅 今日日程
+      ## 📧 重要邮件
+      ## 💡 今日建议
+    
+    model:
+      provider: openai
+      model: gpt-4o-mini  # 晨报使用低成本模型
+    
+    description: "每日晨报"
+    tags: ["daily", "morning"]
+    notify_on_success: false
+
+  # 示例2: 每小时健康检查
+  - name: health-check
+    schedule: "0 * * * *"  # 每小时
+    prompt: |
+      检查系统健康状态：
+      1. 磁盘空间使用率
+      2. 内存使用率
+      3. CPU负载
+      
+      如果有任何指标超过阈值，生成告警信息。
+    
+    model: gpt-4o-mini
+    retry_policy:
+      max_attempts: 3
+      backoff: exponential
+    
+    tags: ["monitoring", "health"]
+    webhook_url: https://my-app.com/webhooks/health
+
+  # 示例3: 每周报告
+  - name: weekly-report
+    schedule: "0 9 * * 1"  # 每周一早上9点
+    prompt: |
+      生成本周工作总结：
+      1. 查看本周完成的任务
+      2. 统计工作时长
+      3. 识别主要成果
+      4. 规划下周重点
+    
+    model: gpt-4
+    description: "每周工作报告"
+    tags: ["weekly", "report"]
+
+# 方式2: Heartbeat任务 - 智能检查（OpenClaw风格）
+heartbeat:
+  interval: 1800  # 默认30分钟检查一次
+  
+  checks:
+    # 示例1: 邮件检查
+    - name: email-check
+      interval: 1800  # 30分钟
+      check_prompt: |
+        检查邮箱中是否有紧急邮件：
+        - 标题包含 "URGENT" 或 "紧急"
+        - 来自老板的邮件
+        - 过去2小时内收到的高优先级邮件
+        
+        如果有紧急邮件，返回邮件摘要。
+        如果没有，返回 "HEARTBEAT_OK"。
+      
+      speak_conditions:
+        - "has_urgent_email"
+        - "from_boss"
+      
+      silent_hours: [23, 7]  # 夜间23:00-7:00保持沉默
+      remember_duration: 3600  # 1小时内不重复提醒同一事项
+      use_cheap_model: true  # 使用低成本模型
+      
+      action: |
+        如果检测到紧急邮件，发送通知到Telegram
+    
+    # 示例2: 日程提醒
+    - name: calendar-reminder
+      interval: 900  # 15分钟
+      check_prompt: |
+        检查日历：
+        1. 未来2小时内是否有会议
+        2. 是否已经提醒过这些会议
+        
+        如果有未提醒的会议，返回会议信息。
+        否则返回 "HEARTBEAT_OK"。
+      
+      silent_hours: [22, 8]
+      remember_duration: 7200  # 2小时内不重复提醒
+
+    # 示例3: 服务器监控
+    - name: server-monitor
+      interval: 300  # 5分钟
+      check_prompt: |
+        检查服务器状态：
+        - CPU使用率 > 80%?
+        - 内存使用率 > 90%?
+        - 磁盘空间 < 10%?
+        
+        如果一切正常，返回 "HEARTBEAT_OK"。
+        如果有异常，返回具体的告警信息。
+      
+      silent_hours: [0, 6]  # 深夜0:00-6:00除非是critical级别
+      remember_duration: 1800  # 30分钟内不重复告警
+
+# 方式3: Event任务 - Webhook触发
+event_hooks:
+  # 示例1: GitHub Webhook
+  - name: github-deploy
+    webhook_path: /webhooks/github
+    webhook_secret: ${GITHUB_WEBHOOK_SECRET}  # 从环境变量读取
+    filter: "event.ref == 'refs/heads/main' and event.pusher"
+    
+    prompt: |
+      GitHub收到push事件到main分支，执行自动部署：
+      1. 拉取最新代码
+      2. 运行测试
+      3. 如果测试通过，部署到生产环境
+      4. 发送部署结果通知
+    
+    model: gpt-4o-mini
+    rate_limit: 10  # 每分钟最多10次触发
+    
+    tags: ["github", "deploy", "ci/cd"]
+
+  # 示例2: 告警Webhook
+  - name: alert-handler
+    webhook_path: /webhooks/alert
+    prompt: |
+      收到告警事件，分析告警内容并决定响应动作：
+      - 如果是P0级别，立即通知值班人员
+      - 如果是P1级别，记录并等待Heartbeat处理
+      - 如果是P2及以下，记录到日志
+    
+    model: gpt-4
+    tags: ["alerting", "ops"]
+
+# ========== 高级配置 ==========
+
+# 性能配置
+max_concurrent_tasks: 10
+worker_threads: 4
+
+# 通知配置
+notifications:
+  telegram:
+    bot_token: ${TELEGRAM_BOT_TOKEN}
+    chat_id: ${TELEGRAM_CHAT_ID}
+  
+  slack:
+    webhook_url: ${SLACK_WEBHOOK_URL}
+  
+  email:
+    smtp_host: smtp.gmail.com
+    smtp_port: 587
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
+
+# 成本优化
+cost_optimization:
+  # 自动选择合适的模型
+  auto_model_selection:
+    - condition: "task.type == 'routine'"
+      model: gpt-4o-mini
+    - condition: "task.type == 'analysis'"
+      model: gpt-4
+  
+  # 缓存配置
+  cache_responses: true
+  cache_ttl: 3600  # 1小时
