@@ -11,7 +11,7 @@ import os
 # 支持环境变量配置，便于 Docker 部署
 SCHEDULER_SKILL_PATH = os.getenv(
     "SCHEDULER_SKILL_PATH",
-    r"d:\IT\新项目\ai-scheduler-skill\src"
+    r"D:\IT\AI智能体\ai-scheduler-skill\src"
 )
 sys.path.insert(0, SCHEDULER_SKILL_PATH)
 
