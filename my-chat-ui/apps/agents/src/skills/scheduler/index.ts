@@ -11,255 +11,19 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { Skill, SkillMetadata } from "../types.js";
+import { parseTimeToCron } from "../../utils/cron-parser.js";
 
 // 导入 scheduler 路由的函数
 import {
   sendMCPRequest,
   taskCacheContainer,
   startSchedulerProcess,
-  stopSchedulerProcess,
   saveTasksToFile,
 } from "../../routes/scheduler.js";
 
 // 获取 taskCache 的便捷引用
 const getTaskCache = () => taskCacheContainer.tasks;
 
-/**
- * 将自然语言时间描述转换为 Cron 表达式
- * 支持中文描述，如 "每天下午6点" -> "0 18 * * *"
- *
- * 支持格式：
- * - 每天: 每天早上8点、每天下午6点半、每天晚上10点
- * - 每周: 每周一早上8点、每周五下午6点
- * - 工作日: 工作日早上9点、工作日下午6点
- * - 周末: 周末早上10点、周日下午3点
- * - 每月: 每月1号早上9点、每月15号下午2点
- * - 间隔: 每30分钟、每2小时、每隔5分钟
- * - 组合: 每周三下午3点半、每月最后一天晚上8点
- */
-function parseTimeDescription(description: string): string {
-  // 标准化描述：去除空格、统一标点
-  let desc = description
-    .toLowerCase()
-    .replace(/\s/g, "")
-    .replace(/[：:,，]/g, "")
-    .replace(/(每隔|每)/g, "每");
-
-  // ===== 预设模式匹配 =====
-  const patterns: Record<string, string> = {
-    // 每天固定时间
-    "每天早上8点": "0 8 * * *",
-    "每天早上9点": "0 9 * * *",
-    "每天上午8点": "0 8 * * *",
-    "每天上午9点": "0 9 * * *",
-    "每天上午10点": "0 10 * * *",
-    "每天上午11点": "0 11 * * *",
-    "每天中午12点": "0 12 * * *",
-    "每天下午1点": "0 13 * * *",
-    "每天下午2点": "0 14 * * *",
-    "每天下午3点": "0 15 * * *",
-    "每天下午4点": "0 16 * * *",
-    "每天下午5点": "0 17 * * *",
-    "每天下午6点": "0 18 * * *",
-    "每天下午18点": "0 18 * * *",
-    "每天晚上7点": "0 19 * * *",
-    "每天晚上8点": "0 20 * * *",
-    "每天晚上9点": "0 21 * * *",
-    "每天晚上10点": "0 22 * * *",
-    "每天晚上11点": "0 23 * * *",
-    "每天凌晨0点": "0 0 * * *",
-    "每天凌晨1点": "0 1 * * *",
-    "每天凌晨2点": "0 2 * * *",
-
-    // 工作日（周一到周五）
-    "工作日早上8点": "0 8 * * 1-5",
-    "工作日早上9点": "0 9 * * 1-5",
-    "工作日上午8点": "0 8 * * 1-5",
-    "工作日上午9点": "0 9 * * 1-5",
-    "工作日下午6点": "0 18 * * 1-5",
-    "工作日晚上7点": "0 19 * * 1-5",
-    "工作日晚上8点": "0 20 * * 1-5",
-
-    // 周末（周六、周日）
-    "周末早上9点": "0 9 * * 0,6",
-    "周末早上10点": "0 10 * * 0,6",
-    "周末下午2点": "0 14 * * 0,6",
-    "周末下午3点": "0 15 * * 0,6",
-    "周末晚上8点": "0 20 * * 0,6",
-
-    // 每周固定时间
-    "每周一早上8点": "0 8 * * 1",
-    "每周一早上9点": "0 9 * * 1",
-    "每周一下午6点": "0 18 * * 1",
-    "每周二早上8点": "0 8 * * 2",
-    "每周二早上9点": "0 9 * * 2",
-    "每周三早上8点": "0 8 * * 3",
-    "每周三早上9点": "0 9 * * 3",
-    "每周四早上8点": "0 8 * * 4",
-    "每周四早上9点": "0 9 * * 4",
-    "每周五早上8点": "0 8 * * 5",
-    "每周五早上9点": "0 9 * * 5",
-    "每周五下午6点": "0 18 * * 5",
-    "每周六早上9点": "0 9 * * 6",
-    "每周六早上10点": "0 10 * * 6",
-    "每周日早上9点": "0 9 * * 0",
-    "每周日晚上9点": "0 21 * * 0",
-
-    // 间隔频率
-    "每小时": "0 * * * *",
-    "每1小时": "0 * * * *",
-    "每2小时": "0 */2 * * *",
-    "每3小时": "0 */3 * * *",
-    "每4小时": "0 */4 * * *",
-    "每6小时": "0 */6 * * *",
-    "每8小时": "0 */8 * * *",
-    "每12小时": "0 */12 * * *",
-
-    // 每分钟（测试用）
-    "每分钟": "* * * * *",
-    "每1分钟": "* * * * *",
-    "每5分钟": "*/5 * * * *",
-    "每10分钟": "*/10 * * * *",
-    "每15分钟": "*/15 * * * *",
-    "每20分钟": "*/20 * * * *",
-    "每30分钟": "*/30 * * * *",
-  };
-
-  // 尝试直接匹配
-  if (patterns[desc]) {
-    console.log(`[SchedulerSkill] Matched preset pattern: "${desc}" -> "${patterns[desc]}"`);
-    return patterns[desc];
-  }
-
-  // ===== 智能解析 =====
-
-  // 1. 解析 "每X分钟/小时" 格式
-  const intervalMatch = desc.match(/每(\d+)(分钟|小时|时)/);
-  if (intervalMatch) {
-    const num = parseInt(intervalMatch[1], 10);
-    const unit = intervalMatch[2];
-
-    if (unit === "分钟") {
-      return `*/${num} * * * *`;
-    } else if (unit === "小时" || unit === "时") {
-      return `0 */${num} * * *`;
-    }
-  }
-
-  // 2. 解析时间（支持 "X点"、"X点Y分"、"X点半"、"X点一刻"、"X点三刻"）
-  let hour = -1;
-  let minute = 0;
-
-  // 匹配 "X点Y分" 或 "X点"
-  const timeMatch = desc.match(/(\d+)[点时](?:(\d+|半|一刻|三刻)分?)?/);
-  if (timeMatch) {
-    hour = parseInt(timeMatch[1], 10);
-    const minuteStr = timeMatch[2];
-
-    if (minuteStr) {
-      if (minuteStr === "半") {
-        minute = 30;
-      } else if (minuteStr === "一刻") {
-        minute = 15;
-      } else if (minuteStr === "三刻") {
-        minute = 45;
-      } else if (!isNaN(parseInt(minuteStr))) {
-        minute = parseInt(minuteStr, 10);
-      }
-    }
-
-    // 处理12小时制转24小时制
-    const isPM = desc.includes("下午") || desc.includes("晚上") || desc.includes("傍晚") || desc.includes("黄昏");
-    const isAM = desc.includes("早上") || desc.includes("上午") || desc.includes("早晨") || desc.includes("清晨");
-
-    if (isPM && hour < 12) {
-      hour += 12;
-    }
-    // 处理凌晨/早上 (12点特殊情况)
-    if (desc.includes("凌晨") && hour === 12) {
-      hour = 0;
-    }
-    if (desc.includes("中午") && hour < 12) {
-      hour += 12;
-    }
-  }
-
-  // 3. 解析星期几（完整映射）
-  const weekdayMap: Record<string, number | string> = {
-    // 单天
-    "周一": 1, "周二": 2, "周三": 3, "周四": 4,
-    "周五": 5, "周六": 6, "周日": 0, "星期天": 0,
-    "星期一": 1, "星期二": 2, "星期三": 3, "星期四": 4,
-    "星期五": 5, "星期六": 6, "星期日": 0,
-    // 范围
-    "工作日": "1-5",
-    "周末": "0,6",
-    "周一到周五": "1-5",
-    "周一到周日": "*",
-    "周二到周四": "2-4",
-  };
-
-  let weekday: string | null = null;
-  for (const [key, value] of Object.entries(weekdayMap)) {
-    if (desc.includes(key)) {
-      weekday = String(value);
-      break;
-    }
-  }
-
-  // 4. 解析每月几号
-  const dayOfMonthMatch = desc.match(/每月(\d+)[号日]/);
-  let dayOfMonth: string | null = null;
-  if (dayOfMonthMatch) {
-    dayOfMonth = dayOfMonthMatch[1];
-  }
-  // 每月最后一天
-  if (desc.includes("每月最后一天")) {
-    dayOfMonth = "L";
-  }
-
-  // 5. 解析"每隔X天"格式
-  const everyXDaysMatch = desc.match(/每(\d+)天/);
-  if (everyXDaysMatch && hour >= 0) {
-    const days = parseInt(everyXDaysMatch[1], 10);
-    // 使用特殊标记，实际应用中可能需要使用更复杂的调度
-    // 这里简化为每天执行（实际应该使用 APScheduler 的 interval 触发器）
-    console.log(`[SchedulerSkill] Every ${days} days detected, using daily cron as approximation`);
-    return `${minute} ${hour} * * *`;
-  }
-
-  // 5. 生成 Cron 表达式
-  if (hour >= 0) {
-    if (dayOfMonth) {
-      // 每月特定日期
-      return `${minute} ${hour} ${dayOfMonth} * *`;
-    } else if (weekday) {
-      // 每周特定天
-      return `${minute} ${hour} * * ${weekday}`;
-    } else {
-      // 默认每天
-      return `${minute} ${hour} * * *`;
-    }
-  }
-
-  // 6. 特殊时间词处理
-  if (desc.includes(" sunrise ") || desc.includes("日出")) {
-    return `0 6 * * *`; // 日出约6点
-  }
-  if (desc.includes(" sunset ") || desc.includes("日落")) {
-    return `0 18 * * *`; // 日落约18点
-  }
-  if (desc.includes(" midnight ") || desc.includes("午夜")) {
-    return `0 0 * * *`;
-  }
-  if (desc.includes(" noon ") || desc.includes("正午")) {
-    return `0 12 * * *`;
-  }
-
-  // 无法解析，返回原值
-  console.warn(`[SchedulerSkill] Could not parse time description: "${description}", passing as-is`);
-  return description;
-}
 
 export const schedulerSkillMetadata: SkillMetadata = {
   id: "ai-scheduler",
@@ -281,7 +45,7 @@ export const schedulerSkillMetadata: SkillMetadata = {
       type: "string",
       required: false,
       description: "默认使用的 AI 模型",
-      default: "moonshot-v1-8k",
+      default: "gpt-4o-mini",
     },
     {
       name: "notifyUIEnabled",
@@ -338,13 +102,24 @@ export async function createSchedulerSkill(
     tools: [
       // 1. 创建定时任务
       tool(
-        async ({ name, scheduleDescription, prompt, timezone: _timezone }) => {
+        async ({ name, scheduleDescription, prompt, timezone: _timezone, model }) => {
           // 通过 MCP 调用 Python 调度器
           try {
             console.log(`[SchedulerSkill] Creating cron task: ${name}, schedule: ${scheduleDescription}`);
 
             // 将自然语言转换为 cron 表达式
-            const cronExpression = parseTimeDescription(scheduleDescription);
+            let cronExpression = parseTimeToCron(scheduleDescription);
+            if (!cronExpression) {
+              // 如果已经是有效的 cron 表达式，允许直接透传
+              const fields = scheduleDescription.trim().split(/\s+/);
+              const isValidCronField = (f: string) =>
+                /^[\d*,\/\-#]+$/.test(f) || /^[L?]$/.test(f) || /^\d+W$/.test(f) || /^LW$/.test(f);
+              const isValidCron = fields.length === 5 && fields.every(isValidCronField);
+              if (!isValidCron) {
+                return `❌ 创建任务失败: 无法理解时间描述 "${scheduleDescription}"，请使用支持的格式（如"每天早上8点"、"每30分钟"），或输入标准 Cron 表达式`;
+              }
+              cronExpression = scheduleDescription;
+            }
             console.log(`[SchedulerSkill] Converted "${scheduleDescription}" to cron: ${cronExpression}`);
 
             // 调用 MCP 创建任务
@@ -358,6 +133,7 @@ export async function createSchedulerSkill(
                   prompt: prompt,
                   timezone: _timezone || "Asia/Shanghai",
                   description: prompt.substring(0, 100),
+                  model: model || undefined,
                 },
               });
             } catch (mcpError) {
@@ -408,21 +184,7 @@ export async function createSchedulerSkill(
                 console.error("[SchedulerSkill] Failed to save tasks:", saveError);
               }
 
-              // 自动重启调度器进程，使新任务立即生效
-              console.log("[SchedulerSkill] Restarting scheduler process to activate new task...");
-              setTimeout(() => {
-                try {
-                  stopSchedulerProcess();
-                  setTimeout(() => {
-                    startSchedulerProcess();
-                    console.log("[SchedulerSkill] Scheduler process restarted successfully");
-                  }, 1000);
-                } catch (restartError) {
-                  console.error("[SchedulerSkill] Failed to restart scheduler:", restartError);
-                }
-              }, 100);
-
-              return `✅ 定时任务 "${name}" 创建成功！\n\n任务ID: ${taskId}\n调度: ${scheduleDescription}\n时区: ${_timezone || "Asia/Shanghai"}\n提示词: ${prompt.substring(0, 50)}...\n\n调度器正在重启以使任务生效，请等待5秒后刷新查看。`;
+              return `✅ 定时任务 "${name}" 创建成功！\n\n任务ID: ${taskId}\n调度: ${scheduleDescription}\n时区: ${_timezone || "Asia/Shanghai"}\n提示词: ${prompt.substring(0, 50)}...`;
             } else {
               console.error("[SchedulerSkill] Could not extract task ID from MCP response:", content);
               return `❌ 创建任务失败: 无法从调度器获取任务ID。响应: ${content.substring(0, 200)}`;
@@ -491,6 +253,7 @@ export async function createSchedulerSkill(
               .optional()
               .default("Asia/Shanghai")
               .describe("时区，默认 Asia/Shanghai"),
+            model: z.string().optional().describe("使用的AI模型，如 gpt-4o-mini"),
           }),
         }
       ),
@@ -576,21 +339,7 @@ export async function createSchedulerSkill(
                 console.error("[SchedulerSkill] Failed to save tasks:", saveError);
               }
 
-              // 自动重启调度器进程，使新任务立即生效
-              console.log("[SchedulerSkill] Restarting scheduler process to activate new task...");
-              setTimeout(() => {
-                try {
-                  stopSchedulerProcess();
-                  setTimeout(() => {
-                    startSchedulerProcess();
-                    console.log("[SchedulerSkill] Scheduler process restarted successfully");
-                  }, 1000);
-                } catch (restartError) {
-                  console.error("[SchedulerSkill] Failed to restart scheduler:", restartError);
-                }
-              }, 100);
-
-              return `✅ 智能检查任务 "${name}" 创建成功！\n\n任务ID: ${taskId}\n检查间隔: ${checkInterval} (${intervalSeconds}秒)\n触发条件: ${speakCondition}\n\n调度器正在重启以使任务生效，请等待5秒后刷新查看。`;
+              return `✅ 智能检查任务 "${name}" 创建成功！\n\n任务ID: ${taskId}\n检查间隔: ${checkInterval} (${intervalSeconds}秒)\n触发条件: ${speakCondition}`;
             } else {
               console.error("[SchedulerSkill] Could not extract task ID from MCP response:", content);
               return `❌ 创建任务失败: 无法从调度器获取任务ID。响应: ${content.substring(0, 200)}`;
@@ -834,7 +583,7 @@ Tavily联网搜索工具，使用Tavily API搜索互联网上的最新信息。
       }
 
       console.log("[SchedulerSkill] 可用工具: schedule_cron_task, schedule_heartbeat_task, list_scheduled_tasks, delete_scheduled_task, trigger_task_now, scheduler_web_search");
-      console.log("[SchedulerSkill] 修复内容: 1) 创建任务后自动重启调度器 2) 晨报任务不再触发新闻搜索");
+      console.log("[SchedulerSkill] 功能特性: 1) 支持模型透传 2) 统一 Cron 解析 3) 热注册无需重启");
       console.log("[SchedulerSkill] 当前缓存任务数:", getTaskCache().length);
       return true;
     },

@@ -10,7 +10,7 @@
  * - 查看任务执行历史
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Clock,
   Play,
@@ -107,6 +107,23 @@ export function SchedulerPanel() {
   // 删除确认
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null);
 
+  // Settings dialog + model input
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [schedulerModel, setSchedulerModel] = useState("");
+
+  // Task edit flow
+  const [editingTask, setEditingTask] = useState<ScheduledTask | null>(null);
+  const [editTaskName, setEditTaskName] = useState("");
+  const [editTaskSchedule, setEditTaskSchedule] = useState("");
+  const [editTaskPrompt, setEditTaskPrompt] = useState("");
+  const [editTaskTimezone, setEditTaskTimezone] = useState("Asia/Shanghai");
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Execution history popup
+  const [historyTaskId, setHistoryTaskId] = useState<string | null>(null);
+  const [taskHistory, setTaskHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
   // 获取任务列表
   const fetchTasks = useCallback(async () => {
     try {
@@ -141,6 +158,16 @@ export function SchedulerPanel() {
   useEffect(() => {
     fetchTasks();
     fetchStats();
+    const fetchConfig = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/scheduler/config`);
+        if (response.ok) {
+          const data = await response.json();
+          setSchedulerModel(data.config?.defaultModel || "");
+        }
+      } catch (e) { console.error("[Scheduler] Failed to fetch config:", e); }
+    };
+    fetchConfig();
     // 定时刷新
     const interval = setInterval(() => {
       fetchTasks();
@@ -148,6 +175,45 @@ export function SchedulerPanel() {
     }, 30000);
     return () => clearInterval(interval);
   }, [fetchTasks, fetchStats]);
+
+  // SSE 连接 - 接收任务执行结果通知
+  const seenIdsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    const sseUrl = `${API_BASE_URL.replace("/api", "")}/api/notifications/stream`;
+    const eventSource = new EventSource(sseUrl);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "connected") return;
+        if (data.id && seenIdsRef.current.has(data.id)) return;
+
+        if (data.id) {
+          seenIdsRef.current.add(data.id);
+        }
+
+        if (data.type === "task_result") {
+          const statusEmoji = data.status === "success" ? "✅" : data.status === "failed" ? "❌" : "⚠️";
+          const durationText = data.durationMs ? `（${(data.durationMs / 1000).toFixed(2)}s）` : "";
+          toast(`${statusEmoji} 任务「${data.taskName}」执行完成 ${durationText}`, {
+            description: data.result || data.error || "无输出",
+            duration: 6000,
+          });
+        }
+      } catch (e) {
+        console.error("[SchedulerPanel] Failed to parse SSE message:", e);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("[SchedulerPanel] SSE error:", err);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, []);
 
   // 创建 Cron 任务
   const handleCreateCronTask = async () => {
@@ -167,7 +233,7 @@ export function SchedulerPanel() {
           schedule: newTaskSchedule,
           prompt: newTaskPrompt,
           timezone: newTaskTimezone,
-          model: "gpt-4o-mini",
+          model: schedulerModel || undefined,
         }),
       });
 
@@ -290,6 +356,101 @@ export function SchedulerPanel() {
     }
   };
 
+  // Settings save
+  const handleSaveSettings = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/scheduler/config`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ defaultModel: schedulerModel }),
+      });
+      if (!response.ok) throw new Error("Failed to save config");
+      toast.success("设置已保存");
+      setShowSettingsDialog(false);
+    } catch (error) {
+      console.error("[Scheduler] Failed to save config:", error);
+      toast.error("保存设置失败");
+    }
+  };
+
+  // Edit dialog
+  const openEditDialog = (task: ScheduledTask) => {
+    setEditingTask(task);
+    setEditTaskName(task.name);
+    setEditTaskSchedule(task.schedule || "");
+    setEditTaskPrompt(task.description || "");
+    setEditTaskTimezone("Asia/Shanghai");
+  };
+
+  const resetEditForm = () => {
+    setEditingTask(null);
+    setEditTaskName("");
+    setEditTaskSchedule("");
+    setEditTaskPrompt("");
+    setEditTaskTimezone("Asia/Shanghai");
+  };
+
+  const handleEditTask = async () => {
+    if (!editingTask) return;
+    setIsEditing(true);
+    try {
+      const delResponse = await fetch(`${API_BASE_URL}/scheduler/tasks/${editingTask.id}`, {
+        method: "DELETE",
+      });
+      if (!delResponse.ok) throw new Error("Failed to delete old task");
+
+      const body: any = {
+        mode: editingTask.mode,
+        name: editTaskName,
+      };
+      if (editingTask.mode === "cron") {
+        body.schedule = editTaskSchedule;
+        body.prompt = editTaskPrompt;
+        body.timezone = editTaskTimezone;
+        body.model = schedulerModel || undefined;
+      } else if (editingTask.mode === "heartbeat") {
+        body.interval = parseInt(editTaskSchedule) || 1800;
+        body.check_prompt = editTaskPrompt;
+        body.speak_condition = "has_alert";
+      }
+
+      const createResponse = await fetch(`${API_BASE_URL}/scheduler/tasks`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!createResponse.ok) throw new Error("Failed to recreate task");
+
+      toast.success("任务已更新");
+      resetEditForm();
+      fetchTasks();
+      fetchStats();
+    } catch (error) {
+      console.error("[Scheduler] Failed to edit task:", error);
+      toast.error("更新任务失败");
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
+  // History dialog
+  const openHistoryDialog = async (taskId: string) => {
+    setHistoryTaskId(taskId);
+    setIsLoadingHistory(true);
+    setTaskHistory([]);
+    try {
+      const response = await fetch(`${API_BASE_URL}/scheduler/tasks/${taskId}/history`);
+      if (!response.ok) throw new Error("Failed to fetch history");
+      const data = await response.json();
+      setTaskHistory(data.history || []);
+    } catch (error) {
+      console.error("[Scheduler] Failed to fetch history:", error);
+      toast.error("获取执行历史失败");
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
   // 过滤任务
   const filteredTasks = tasks.filter((task) => {
     if (activeTab === "all") return true;
@@ -359,6 +520,9 @@ export function SchedulerPanel() {
           </Badge>
           <Button variant="outline" size="icon" onClick={fetchTasks}>
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          </Button>
+          <Button variant="outline" size="icon" onClick={() => setShowSettingsDialog(true)} title="设置">
+            <Settings className="h-4 w-4" />
           </Button>
           <Button onClick={() => setShowCreateDialog(true)}>
             <Plus className="h-4 w-4 mr-1" />
@@ -478,6 +642,14 @@ export function SchedulerPanel() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEditDialog(task)}>
+                            <Settings className="h-4 w-4 mr-2" />
+                            编辑
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => openHistoryDialog(task.id)}>
+                            <Terminal className="h-4 w-4 mr-2" />
+                            执行历史
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => setTaskToDelete(task.id)}
@@ -632,6 +804,141 @@ export function SchedulerPanel() {
             </Button>
             <Button variant="destructive" onClick={handleDeleteTask}>
               删除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings dialog */}
+      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Scheduler 设置</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">默认 AI 模型</label>
+              <Input
+                placeholder="例如: gpt-4o-mini"
+                value={schedulerModel}
+                onChange={(e) => setSchedulerModel(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleSaveSettings}>保存</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit dialog */}
+      <Dialog open={!!editingTask} onOpenChange={(open) => { if (!open) resetEditForm(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>编辑任务</DialogTitle>
+          </DialogHeader>
+          {editingTask && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">任务名称</label>
+                <Input
+                  value={editTaskName}
+                  onChange={(e) => setEditTaskName(e.target.value)}
+                />
+              </div>
+              {editingTask.mode === "cron" && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium">Cron 表达式</label>
+                    <Input
+                      value={editTaskSchedule}
+                      onChange={(e) => setEditTaskSchedule(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">时区</label>
+                    <Select value={editTaskTimezone} onValueChange={setEditTaskTimezone}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Asia/Shanghai">Asia/Shanghai</SelectItem>
+                        <SelectItem value="UTC">UTC</SelectItem>
+                        <SelectItem value="America/New_York">America/New_York</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
+              {editingTask.mode === "heartbeat" && (
+                <div>
+                  <label className="text-sm font-medium">检查间隔 (秒)</label>
+                  <Input
+                    type="number"
+                    value={editTaskSchedule}
+                    onChange={(e) => setEditTaskSchedule(e.target.value)}
+                  />
+                </div>
+              )}
+              <div>
+                <label className="text-sm font-medium">
+                  {editingTask.mode === "cron" ? "AI 提示词" : "检查提示词"}
+                </label>
+                <Textarea
+                  value={editTaskPrompt}
+                  onChange={(e) => setEditTaskPrompt(e.target.value)}
+                  rows={4}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={resetEditForm}>
+              取消
+            </Button>
+            <Button onClick={handleEditTask} disabled={isEditing}>
+              {isEditing ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* History dialog */}
+      <Dialog open={!!historyTaskId} onOpenChange={(open) => { if (!open) setHistoryTaskId(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>任务执行历史</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            {isLoadingHistory ? (
+              <p className="text-sm text-muted-foreground">加载中...</p>
+            ) : taskHistory.length === 0 ? (
+              <p className="text-sm text-muted-foreground">暂无执行历史</p>
+            ) : (
+              taskHistory.map((h, idx) => (
+                <Card key={idx} className="p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">
+                      {h.status === "success" ? "✅" : h.status === "error" ? "❌" : "⏳"}
+                    </span>
+                    <span className="text-sm font-medium capitalize">{h.status}</span>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    <div>开始: {h.started_at ? new Date(h.started_at).toLocaleString() : "-"}</div>
+                    <div>结束: {h.finished_at ? new Date(h.finished_at).toLocaleString() : "-"}</div>
+                    <div>耗时: {h.duration_ms != null ? `${h.duration_ms}ms` : "-"}</div>
+                    {h.error && <div className="text-destructive mt-1">错误: {h.error}</div>}
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setHistoryTaskId(null)}>
+              关闭
             </Button>
           </DialogFooter>
         </DialogContent>

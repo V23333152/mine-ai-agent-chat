@@ -8,6 +8,7 @@
 import "dotenv/config";
 import { createAPIServer } from "./routes/index.js";
 import { startHotReload, stopHotReload } from "./routes/hot-reload.js";
+import { initializeSkillManager } from "./skills/index.js";
 
 const PORT = process.env.API_PORT ? parseInt(process.env.API_PORT) : 8889;
 const ENABLE_HOT_RELOAD = false;
@@ -15,6 +16,9 @@ const ENABLE_HOT_RELOAD = false;
 console.log("[API Server] Starting...");
 console.log(`[API Server] Environment: ${process.env.NODE_ENV || "development"}`);
 console.log(`[API Server] Hot Reload: ${ENABLE_HOT_RELOAD ? "enabled" : "disabled"}`);
+
+await initializeSkillManager();
+console.log("[API Server] Skill manager initialized");
 
 const server = createAPIServer(PORT);
 

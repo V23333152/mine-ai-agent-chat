@@ -9,6 +9,8 @@ import { spawn, ChildProcess } from "child_process";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { parseTimeToCron } from "../utils/cron-parser.js";
+import { getSkillRegistration, updateSkillConfig } from "../skills/skill-manager.js";
 
 // 获取 __dirname (ES 模块兼容)
 const __filename = fileURLToPath(import.meta.url);
@@ -200,154 +202,6 @@ function handleMCPResponse(line: string) {
   }
 }
 
-// 自然语言时间描述转换为 Cron 表达式
-function parseTimeToCron(scheduleDesc: string): string | null {
-  // 标准化描述
-  let desc = scheduleDesc
-    .toLowerCase()
-    .replace(/\s/g, "")
-    .replace(/[：:,，]/g, "")
-    .replace(/(每隔|每)/g, "每");
-
-  // 预设模式
-  const patterns: Record<string, string> = {
-    // 每天
-    "每天早上8点": "0 8 * * *",
-    "每天早上9点": "0 9 * * *",
-    "每天上午8点": "0 8 * * *",
-    "每天上午9点": "0 9 * * *",
-    "每天上午10点": "0 10 * * *",
-    "每天上午11点": "0 11 * * *",
-    "每天中午12点": "0 12 * * *",
-    "每天下午1点": "0 13 * * *",
-    "每天下午2点": "0 14 * * *",
-    "每天下午3点": "0 15 * * *",
-    "每天下午4点": "0 16 * * *",
-    "每天下午5点": "0 17 * * *",
-    "每天下午6点": "0 18 * * *",
-    "每天晚上7点": "0 19 * * *",
-    "每天晚上8点": "0 20 * * *",
-    "每天晚上9点": "0 21 * * *",
-    "每天晚上10点": "0 22 * * *",
-    "每天晚上11点": "0 23 * * *",
-    "每天凌晨0点": "0 0 * * *",
-    // 工作日
-    "工作日早上8点": "0 8 * * 1-5",
-    "工作日早上9点": "0 9 * * 1-5",
-    "工作日下午6点": "0 18 * * 1-5",
-    // 周末
-    "周末早上9点": "0 9 * * 0,6",
-    "周末早上10点": "0 10 * * 0,6",
-    // 每周
-    "每周一早上8点": "0 8 * * 1",
-    "每周一早上9点": "0 9 * * 1",
-    "每周二早上9点": "0 9 * * 2",
-    "每周三早上9点": "0 9 * * 3",
-    "每周四早上9点": "0 9 * * 4",
-    "每周五下午6点": "0 18 * * 5",
-    "每周日早上9点": "0 9 * * 0",
-    // 间隔
-    "每小时": "0 * * * *",
-    "每2小时": "0 */2 * * *",
-    "每4小时": "0 */4 * * *",
-    "每分钟": "* * * * *",
-    "每5分钟": "*/5 * * * *",
-    "每10分钟": "*/10 * * * *",
-    "每30分钟": "*/30 * * * *",
-  };
-
-  if (patterns[desc]) {
-    return patterns[desc];
-  }
-
-  // 解析间隔
-  const intervalMatch = desc.match(/每(\d+)(分钟|小时|时)/);
-  if (intervalMatch) {
-    const num = parseInt(intervalMatch[1], 10);
-    const unit = intervalMatch[2];
-    if (unit === "分钟") {
-      return `*/${num} * * * *`;
-    } else if (unit === "小时" || unit === "时") {
-      return `0 */${num} * * *`;
-    }
-  }
-
-  // 解析时间
-  let hour = -1;
-  let minute = 0;
-
-  const timeMatch = desc.match(/(\d+)[点时](?:(\d+|半|一刻|三刻)分?)?/);
-  if (timeMatch) {
-    hour = parseInt(timeMatch[1], 10);
-    const minuteStr = timeMatch[2];
-
-    if (minuteStr) {
-      if (minuteStr === "半") {
-        minute = 30;
-      } else if (minuteStr === "一刻") {
-        minute = 15;
-      } else if (minuteStr === "三刻") {
-        minute = 45;
-      } else if (!isNaN(parseInt(minuteStr))) {
-        minute = parseInt(minuteStr, 10);
-      }
-    }
-
-    // 处理12/24小时制
-    const isPM = desc.includes("下午") || desc.includes("晚上") || desc.includes("傍晚");
-    const isNoon = desc.includes("中午");
-    const isMidnight = desc.includes("凌晨") && hour === 12;
-
-    if (isPM && hour < 12) {
-      hour += 12;
-    }
-    if (isNoon && hour < 12) {
-      hour += 12;
-    }
-    if (isMidnight) {
-      hour = 0;
-    }
-  }
-
-  // 解析星期
-  const weekdayMap: Record<string, string> = {
-    "周一": "1", "周二": "2", "周三": "3", "周四": "4",
-    "周五": "5", "周六": "6", "周日": "0", "星期天": "0",
-    "星期一": "1", "星期二": "2", "星期三": "3", "星期四": "4",
-    "星期五": "5", "星期六": "6", "星期日": "0",
-    "工作日": "1-5",
-    "周末": "0,6",
-  };
-
-  let weekday: string | null = null;
-  for (const [key, value] of Object.entries(weekdayMap)) {
-    if (desc.includes(key)) {
-      weekday = value;
-      break;
-    }
-  }
-
-  // 解析每月几号
-  const dayOfMonthMatch = desc.match(/每月(\d+)[号日]/);
-  let dayOfMonth: string | null = null;
-  if (dayOfMonthMatch) {
-    dayOfMonth = dayOfMonthMatch[1];
-  }
-
-  // 生成 Cron
-  if (hour >= 0) {
-    if (dayOfMonth) {
-      return `${minute} ${hour} ${dayOfMonth} * *`;
-    } else if (weekday) {
-      return `${minute} ${hour} * * ${weekday}`;
-    } else {
-      return `${minute} ${hour} * * *`;
-    }
-  }
-
-  return null;
-}
-
 // 同步本地任务到 MCP 调度器
 async function syncLocalTasksToMCP() {
   const localTasks = loadTasksFromFile();
@@ -367,7 +221,7 @@ async function syncLocalTasksToMCP() {
     // 解析任务名称（简单解析）
     const nameMatches = listText.match(/🟢\s+(.+)/g);
     if (nameMatches) {
-      mcpExistingTasks = nameMatches.map(m => m.replace(/🟢\s+/, '').trim());
+      mcpExistingTasks = nameMatches.map((m: string) => m.replace(/🟢\s+/, '').trim());
     }
     console.log(`[Scheduler] MCP existing tasks: ${mcpExistingTasks.join(', ')}`);
   } catch (e) {
@@ -486,8 +340,16 @@ export function startSchedulerProcess() {
     ...process.env,
     SCHEDULER_CONFIG: SCHEDULER_CONFIG_PATH,
     PYTHONIOENCODING: "utf-8",
+    // 确保 Python 加载当前仓库的 ai-scheduler-skill，而不是旧路径
+    SCHEDULER_SKILL_PATH: process.env.SCHEDULER_SKILL_PATH || resolve(process.cwd(), "../../../ai-scheduler-skill/src"),
     // 确保 TAVILY_API_KEY 被传递
     TAVILY_API_KEY: process.env.TAVILY_API_KEY || "",
+    // 确保 webhook 和飞书凭据被传递
+    AGENTS_WEBHOOK_URL: process.env.AGENTS_WEBHOOK_URL || "",
+    FEISHU_APP_ID: process.env.FEISHU_APP_ID || "",
+    FEISHU_APP_SECRET: process.env.FEISHU_APP_SECRET || "",
+    FEISHU_RECEIVE_ID: process.env.FEISHU_RECEIVE_ID || "",
+    FEISHU_RECEIVE_ID_TYPE: process.env.FEISHU_RECEIVE_ID_TYPE || "open_id",
   };
 
   // 检查搜索API配置
@@ -497,8 +359,10 @@ export function startSchedulerProcess() {
     console.log("[Scheduler] WARNING: TAVILY_API_KEY not found in process.env, search functionality will be disabled");
   }
 
-  console.log("[Scheduler] Spawning Python with env keys:", Object.keys(envVars).filter(k => k.includes("API") || k.includes("KEY") || k.includes("BASE")));
-  console.log("[Scheduler] TAVILY_API_KEY in envVars:", envVars.TAVILY_API_KEY ? `YES (length: ${envVars.TAVILY_API_KEY.length})` : "NO");
+  console.log("[Scheduler] SCHEDULER_SKILL_PATH:", envVars.SCHEDULER_SKILL_PATH);
+  console.log("[Scheduler] AGENTS_WEBHOOK_URL:", envVars.AGENTS_WEBHOOK_URL || "NOT SET");
+  console.log("[Scheduler] FEISHU_APP_ID:", envVars.FEISHU_APP_ID ? "SET" : "NOT SET");
+  console.log("[Scheduler] Spawning Python with env keys:", Object.keys(envVars).filter(k => ["API", "KEY", "BASE", "WEBHOOK", "FEISHU"].some(s => k.includes(s))));
 
   schedulerProcess = spawn(PYTHON_PATH, [WRAPPER_PATH], {
     env: envVars,
@@ -647,6 +511,10 @@ export async function getTasks(_req: IncomingMessage, res: ServerResponse) {
               if (modeMatch) currentTask.mode = modeMatch[1];
               const scheduleMatch = line.match(/调度:\s*(.+)/);
               if (scheduleMatch) currentTask.schedule = scheduleMatch[1].trim();
+              const runsMatch = line.match(/执行次数:\s*(\d+)/);
+              if (runsMatch) currentTask.totalRuns = parseInt(runsMatch[1], 10);
+              const lastRunMatch = line.match(/上次执行:\s*(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})/);
+              if (lastRunMatch) currentTask.lastRun = new Date(lastRunMatch[1].replace(' ', 'T')).toISOString();
             }
           }
           if (currentTask) mcpTasks.push(currentTask);
@@ -666,6 +534,9 @@ export async function getTasks(_req: IncomingMessage, res: ServerResponse) {
           if (mcpTask.totalRuns !== undefined) {
             localTaskByName.totalRuns = mcpTask.totalRuns;
           }
+          if (mcpTask.lastRun) {
+            localTaskByName.lastRun = mcpTask.lastRun;
+          }
         } else {
           // 检查是否根据 ID 已存在
           const localTaskById = getTaskCache().find((t) => t.id === mcpTask.id);
@@ -674,6 +545,9 @@ export async function getTasks(_req: IncomingMessage, res: ServerResponse) {
             localTaskById.status = mcpTask.status;
             if (mcpTask.totalRuns !== undefined) {
               localTaskById.totalRuns = mcpTask.totalRuns;
+            }
+            if (mcpTask.lastRun) {
+              localTaskById.lastRun = mcpTask.lastRun;
             }
           } else {
             // 添加新任务到缓存（来自 scheduler.yaml 的配置任务或新创建的任务）
@@ -744,6 +618,7 @@ export async function createTask(req: IncomingMessage, res: ServerResponse) {
             prompt: body.prompt || "执行任务",
             timezone: body.timezone || "UTC",
             description: body.prompt?.substring(0, 100),
+            model: body.model,
           },
         });
 
@@ -807,6 +682,10 @@ export async function createTask(req: IncomingMessage, res: ServerResponse) {
 
     if (body.prompt || body.check_prompt) {
       task.description = (body.prompt || body.check_prompt).substring(0, 100);
+    }
+
+    if (body.model) {
+      task.model = body.model;
     }
 
     getTaskCache().push(task);
@@ -884,13 +763,12 @@ export async function triggerTask(_req: IncomingMessage, res: ServerResponse, ta
     // 尝试通过 MCP 触发
     let mcpResult;
     let triggered = false;
-    let isLocalExecution = false;
     try {
       mcpResult = await sendMCPRequest("tools/call", {
         name: "trigger_task",
         arguments: { task_id: taskId },
       });
-      
+
       // 检查 MCP 返回的内容是否包含错误
       const mcpText = mcpResult?.content?.[0]?.text || "";
       console.log("[Scheduler] MCP response text:", mcpText);
@@ -898,13 +776,12 @@ export async function triggerTask(_req: IncomingMessage, res: ServerResponse, ta
         console.log("[Scheduler] MCP returned error, will execute locally:", mcpText);
         throw new Error(mcpText);
       }
-      
+
       triggered = true;
       console.log("[Scheduler] MCP trigger success", mcpResult);
     } catch (mcpError) {
       console.log("[Scheduler] MCP trigger failed, will execute locally:", mcpError);
       // MCP 触发失败，任务只在本地存在，直接本地执行
-      isLocalExecution = true;
       triggered = true;
       
       // 本地执行：发送任务到通知系统
@@ -1056,6 +933,40 @@ export async function getStats(_req: IncomingMessage, res: ServerResponse) {
   } catch (error) {
     console.error("[Scheduler] Error getting stats:", error);
     sendJSON(res, { success: false, error: String(error) }, 500);
+  }
+}
+
+export async function getConfig(_req: IncomingMessage, res: ServerResponse) {
+  const registration = getSkillRegistration("ai-scheduler");
+  sendJSON(res, { success: true, config: registration?.config || {} });
+}
+
+export async function updateConfig(req: IncomingMessage, res: ServerResponse) {
+  try {
+    const body = await getRequestBody(req);
+    await updateSkillConfig("ai-scheduler", body);
+    sendJSON(res, { success: true, message: "Config updated" });
+  } catch (error) {
+    sendJSON(res, { success: false, error: String(error) }, 500);
+  }
+}
+
+export async function getTaskHistory(_req: IncomingMessage, res: ServerResponse, taskId?: string) {
+  try {
+    const result = await sendMCPRequest("tools/call", {
+      name: "get_task_history",
+      arguments: { task_id: taskId || undefined, limit: 50 },
+    });
+    const text = result?.content?.[0]?.text;
+    if (text && (text.trim().startsWith("[") || text.trim().startsWith("{"))) {
+      const parsed = JSON.parse(text);
+      sendJSON(res, { success: true, history: parsed });
+      return;
+    }
+    sendJSON(res, { success: true, history: [] });
+  } catch (error) {
+    console.log("[Scheduler] get_task_history failed:", error);
+    sendJSON(res, { success: true, history: [] });
   }
 }
 

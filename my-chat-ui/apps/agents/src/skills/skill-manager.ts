@@ -82,6 +82,7 @@ async function saveRegistryToFile(): Promise<void> {
     await fs.writeFile(REGISTRY_FILE, JSON.stringify(state.registry, null, 2));
   } catch (error) {
     console.error("[SkillManager] Failed to save registry:", error);
+    throw new Error("Failed to save skill registry to file");
   }
 }
 
@@ -146,7 +147,7 @@ function createDefaultRegistry(): SkillRegistry {
         enabled: true, // 默认启用
         config: {
           apiKey: process.env.MOONSHOT_API_KEY,
-          defaultModel: "moonshot-v1-8k",
+          defaultModel: "gpt-4o-mini",
           notifyUIEnabled: true,
         },
       },
@@ -276,6 +277,31 @@ export function getSkillStatus(): Array<{
   }
 
   return result;
+}
+
+/**
+ * 获取 Skill 注册信息（未注册时返回 undefined）
+ */
+export function getSkillRegistration(skillId: string): SkillRegistration | undefined {
+  return state.registry.skills[skillId];
+}
+
+/**
+ * 更新 Skill 配置
+ */
+export async function updateSkillConfig(skillId: string, config: Record<string, any>): Promise<void> {
+  const registration = state.registry.skills[skillId];
+  if (!registration) {
+    throw new Error(`Skill ${skillId} not registered`);
+  }
+
+  registration.config = { ...registration.config, ...config };
+  await saveRegistryToFile();
+
+  const loadedSkill = state.skills.get(skillId);
+  if (loadedSkill) {
+    loadedSkill.config = { ...loadedSkill.config, ...config };
+  }
 }
 
 /**

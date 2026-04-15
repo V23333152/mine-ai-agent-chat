@@ -25,7 +25,12 @@ import {
   resumeTask,
   getStats,
   startSchedulerProcess,
+  getConfig,
+  updateConfig,
+  getTaskHistory,
 } from "./scheduler.js";
+import { addSSEClient, broadcast } from "../services/notification-hub.js";
+import { formatFeishuMessage, sendFeishuMessage } from "../services/feishu.js";
 
 // 路由配置
 const routes: Array<{
@@ -78,6 +83,69 @@ const routes: Array<{
   { method: "POST", pattern: /^\/api\/scheduler\/tasks\/(.+)\/pause$/, handler: pauseTask },
   { method: "POST", pattern: /^\/api\/scheduler\/tasks\/(.+)\/resume$/, handler: resumeTask },
   { method: "GET", pattern: /^\/api\/scheduler\/stats$/, handler: getStats },
+  { method: "GET", pattern: /^\/api\/scheduler\/config$/, handler: getConfig },
+  { method: "POST", pattern: /^\/api\/scheduler\/config$/, handler: updateConfig },
+  { method: "GET", pattern: /^\/api\/scheduler\/tasks\/(.+)\/history$/, handler: getTaskHistory },
+  // Notification API
+  {
+    method: "GET",
+    pattern: /^\/api\/notifications\/stream$/,
+    handler: async (_req, res) => {
+      addSSEClient(res);
+    },
+  },
+  {
+    method: "POST",
+    pattern: /^\/api\/notifications\/webhook$/,
+    handler: async (req, res) => {
+      try {
+        let bodyStr = "";
+        req.on("data", (chunk: Buffer) => { bodyStr += chunk.toString("utf-8"); });
+        req.on("end", async () => {
+          const body = JSON.parse(bodyStr);
+          console.log("[Notification] Webhook received:", body);
+
+          // Broadcast to SSE clients
+          broadcast({
+            type: "task_result",
+            taskName: body.task_name || body.taskName,
+            status: body.status,
+            result: body.result,
+            error: body.error,
+            durationMs: body.duration_ms,
+            receivedAt: new Date().toISOString(),
+          });
+
+          // Send to Feishu
+          const receiveId = process.env.FEISHU_RECEIVE_ID;
+          const receiveIdType = process.env.FEISHU_RECEIVE_ID_TYPE || "open_id";
+          if (receiveId) {
+            try {
+              const message = formatFeishuMessage(body);
+              console.log("[Notification] Sending Feishu message to", receiveIdType, receiveId);
+              const feishuOk = await sendFeishuMessage(receiveId, receiveIdType, message);
+              if (feishuOk) {
+                console.log("[Notification] Feishu message sent successfully");
+              } else {
+                console.error("[Notification] Feishu message failed (returned false)");
+              }
+            } catch (e) {
+              console.error("[Notification] Feishu send threw error:", e);
+            }
+          } else {
+            console.log("[Notification] FEISHU_RECEIVE_ID not set, skipping Feishu");
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ success: true }));
+        });
+      } catch (error) {
+        console.error("[Notification] Webhook processing error:", error);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: false, error: String(error) }));
+      }
+    },
+  },
 ];
 
 // 处理请求
